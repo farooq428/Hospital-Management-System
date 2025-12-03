@@ -1,0 +1,93 @@
+-- DDL for EasyCare Hospital System
+
+CREATE DATABASE EasyCareDB;
+
+-- 1. Role Table
+CREATE TABLE Role (
+    Role_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Role_Name VARCHAR(50) NOT NULL UNIQUE,
+    Description TEXT
+);
+
+-- 2. Employee Table
+CREATE TABLE Employee (
+    Employee_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    Role_ID INT NOT NULL,
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    Password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (Role_ID) REFERENCES Role(Role_ID)
+);
+
+-- 3. Patient Table
+CREATE TABLE Patient (
+    Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    Age INT,
+    DOB DATE,
+    Gender ENUM('Male', 'Female', 'Other'),
+    Address VARCHAR(500),
+    Phone VARCHAR(20) UNIQUE
+);
+
+-- 4. Appointment Table
+CREATE TABLE Appointment (
+    Appointment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Patient_ID INT NOT NULL,
+    Employee_ID INT NOT NULL, -- Doctor
+    Date DATE NOT NULL,
+    Time TIME NOT NULL,
+    Reason VARCHAR(255),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID)
+);
+
+-- 5. Prescription Table
+CREATE TABLE Prescription (
+    Prescription_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Patient_ID INT NOT NULL,
+    Employee_ID INT NOT NULL, -- Doctor
+    Date DATE NOT NULL,
+    Medicines_List TEXT, -- Consider a separate Medication table later
+    Dosage VARCHAR(100),
+    Duration VARCHAR(100),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID)
+);
+
+-- 6. Bill Table
+CREATE TABLE Bill (
+    Bill_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Patient_ID INT NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    Date DATE NOT NULL,
+    Status ENUM('Pending', 'Paid', 'Cancelled') DEFAULT 'Pending',
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID)
+);
+
+-- 7. Test_Report Table
+CREATE TABLE Test_Report (
+    Report_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Patient_ID INT NOT NULL,
+    Result TEXT,
+    Date DATE NOT NULL,
+    Type VARCHAR(100),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID)
+);
+
+-- 8. Room and Room_Assignment Tables
+CREATE TABLE Room (
+    Room_ID INT PRIMARY KEY,
+    Room_Type VARCHAR(50) NOT NULL,
+    Status ENUM('Available', 'Occupied', 'Maintenance') NOT NULL
+);
+
+CREATE TABLE Room_Assignment (
+    Assignment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Patient_ID INT NOT NULL,
+    Room_ID INT NOT NULL,
+    Admission_Date DATETIME NOT NULL,
+    Discharge_Date DATETIME, -- NULL if currently admitted
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
+);
