@@ -1,14 +1,19 @@
-// controllers/employeeController.js
 import db from '../config/db.js';
 import bcrypt from 'bcryptjs';
 
 // --- Role Controllers ---
 
 // @route GET /api/v1/employees/roles
-// Fetches list of roles for the EmployeeForm dropdown
+// Fetches list of roles for the EmployeeForm dropdown.
+// Excludes the 'Patient' role (Role_ID 4) as it's reserved for public self-registration.
 export const getAllRoles = async (req, res) => {
     try {
-        const [roles] = await db.query(`SELECT Role_ID, Role_Name FROM Role`);
+        const [roles] = await db.query(
+            `SELECT Role_ID, Role_Name 
+             FROM Role 
+             WHERE Role_Name != 'Patient' 
+             ORDER BY Role_ID ASC`
+        );
         res.status(200).json(roles);
     } catch (error) {
         console.error('Error fetching roles:', error);
@@ -19,7 +24,7 @@ export const getAllRoles = async (req, res) => {
 // --- Employee Controllers ---
 
 // @route POST /api/v1/employees
-// Used by Admin to create a new employee account
+// Used by Admin to create a new employee account. Password is automatically hashed.
 export const createEmployee = async (req, res) => {
     const { name, email, password, roleId } = req.body;
 
@@ -28,7 +33,7 @@ export const createEmployee = async (req, res) => {
     }
 
     try {
-        // 1. Hash the password before storing
+        // 1. Hash the password before storing (using a salt factor of 10)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -54,14 +59,15 @@ export const createEmployee = async (req, res) => {
 };
 
 // @route GET /api/v1/employees
-// Used by Admin to view all employees in the DataTable
+// Used by Admin to view all employees in the DataTable. Excludes Patient role data.
 export const getAllEmployees = async (req, res) => {
     try {
-        // Join with Role table to display the readable role name
+        // Join with Role table to display the readable role name and filter out Patients
         const [employees] = await db.query(
             `SELECT E.Employee_ID, E.Name, E.Email, R.Role_Name, R.Role_ID 
              FROM Employee E
              JOIN Role R ON E.Role_ID = R.Role_ID
+             WHERE R.Role_Name != 'Patient'
              ORDER BY E.Employee_ID ASC`
         );
         res.status(200).json(employees);
@@ -72,13 +78,12 @@ export const getAllEmployees = async (req, res) => {
 };
 
 // @route PUT /api/v1/employees/:id
-// Used by Admin to update employee details (excluding password change, for simplicity)
+// Used by Admin to update employee details. Handles optional password change.
 export const updateEmployee = async (req, res) => {
     const { id } = req.params;
-    const { name, email, roleId } = req.body;
+    const { name, email, roleId, password } = req.body; // Added password for optional update
 
-    // Password change should be handled by a separate secure endpoint
-    if (!name && !email && !roleId) {
+    if (!name && !email && !roleId && !password) {
         return res.status(400).json({ message: 'No fields provided for update.' });
     }
 
@@ -89,6 +94,19 @@ export const updateEmployee = async (req, res) => {
     if (name) { setClauses.push('Name = ?'); params.push(name); }
     if (email) { setClauses.push('Email = ?'); params.push(email); }
     if (roleId) { setClauses.push('Role_ID = ?'); params.push(roleId); }
+
+    // Check if password is provided, and hash it if so
+    if (password) {
+        try {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            setClauses.push('Password = ?');
+            params.push(hashedPassword);
+        } catch (hashError) {
+            console.error('Error hashing password during update:', hashError);
+            return res.status(500).json({ message: 'Failed to securely update password.' });
+        }
+    }
 
     params.push(id); // Add Employee_ID for the WHERE clause
 
@@ -104,6 +122,10 @@ export const updateEmployee = async (req, res) => {
 
         res.status(200).json({ message: 'Employee updated successfully.' });
     } catch (error) {
+        // Check for duplicate email error
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'This email is already in use by another account.' });
+        }
         console.error('Error updating employee:', error);
         res.status(500).json({ message: 'Server error during employee update.' });
     }
@@ -115,9 +137,8 @@ export const deleteEmployee = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // WARNING: Deleting an employee who has existing records (Appointments, Prescriptions) 
-        // will cause foreign key errors unless cascade delete is set up, or records are first orphaned/transferred.
-        // For simplicity, we assume cascading deletes are handled or relationships are severed elsewhere.
+        // IMPORTANT: Ensure foreign key constraints are handled either by CASCADE DELETE 
+        // in your DDL or by explicitly deleting dependent records (Appointments, Prescriptions) first.
         
         const [result] = await db.query(`DELETE FROM Employee WHERE Employee_ID = ?`, [id]);
 
@@ -128,6 +149,6 @@ export const deleteEmployee = async (req, res) => {
         res.status(200).json({ message: 'Employee deleted successfully.' });
     } catch (error) {
         console.error('Error deleting employee:', error);
-        res.status(500).json({ message: 'Server error during employee deletion.' });
+        res.status(500).json({ message: 'Server error during employee deletion. Check for dependent records.' });
     }
 };

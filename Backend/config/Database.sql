@@ -91,3 +91,14 @@ CREATE TABLE Room_Assignment (
     FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
     FOREIGN KEY (Room_ID) REFERENCES Room(Room_ID)
 );
+
+
+
+-- //////////////////
+
+--  Populating the Role Table
+INSERT INTO Role (Role_ID, Role_Name, Description) VALUES
+(1, 'Admin', 'Full system access and management.'),
+(2, 'Doctor', 'Access to patient charts, prescriptions, and reports.'),
+(3, 'Receptionist', 'Manages appointments, billing, rooms, and patient registration.'),
+(4, 'Patient', 'Public user for self-service appointment booking.');

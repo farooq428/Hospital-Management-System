@@ -1,7 +1,6 @@
 // src/components/forms/PatientForm.jsx
 import React, { useState } from 'react';
-// Assume you have a simple Input and Button component built
-// import CustomInput from '../CustomInput'; 
+import API from '../../api/config'; // <-- Import API
 
 const PatientForm = ({ initialData = {}, isEdit = false }) => {
     const [formData, setFormData] = useState({
@@ -10,7 +9,6 @@ const PatientForm = ({ initialData = {}, isEdit = false }) => {
         gender: initialData.Gender || '',
         address: initialData.Address || '',
         phone: initialData.Phone || '',
-        // Include other fields from your Patient entity
     });
     
     const handleChange = (e) => {
@@ -18,18 +16,24 @@ const PatientForm = ({ initialData = {}, isEdit = false }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => { // <-- Made async
         e.preventDefault();
         
-        console.log('Submitting Patient Data:', formData);
-        
-        if (isEdit) {
-            // Logic for updating existing patient (PUT API call)
-            alert(`Updating Patient ID ${initialData.Patient_ID}`);
-        } else {
-            // Logic for creating new patient (POST API call)
-            alert('New Patient Registered Successfully!');
-            setFormData({ name: '', dob: '', gender: '', address: '', phone: '' }); // Clear form
+        try {
+            if (isEdit) {
+                // PUT /api/v1/patients/:id
+                await API.put(`/patients/${initialData.Patient_ID}`, formData);
+                alert('Patient details updated successfully!');
+            } else {
+                // POST /api/v1/patients
+                await API.post('/patients', formData);
+                alert('New Patient Registered Successfully!');
+                // Clear form
+                setFormData({ name: '', dob: '', gender: '', address: '', phone: '' }); 
+            }
+        } catch (error) {
+            console.error('Submission failed:', error.response?.data || error.message);
+            alert(`Error: ${error.response?.data?.message || 'Could not save data.'}`);
         }
     };
 

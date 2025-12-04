@@ -1,11 +1,11 @@
 // src/components/ProtectedRoute.jsx
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const ProtectedRoute = ({ allowedRoles }) => {
-    const { user, getRole } = useAuth();
-    const userRole = getRole();
+    const { user } = useAuth();
+    const userRole = user?.role;
 
     // 1. Check if user is logged in
     if (!user) {
