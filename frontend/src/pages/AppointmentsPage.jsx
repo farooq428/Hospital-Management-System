@@ -14,10 +14,15 @@ const AppointmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // ✅ Fetch Appointments
+  // ✅✅✅ FETCH APPOINTMENTS WITH TOKEN
   const fetchAppointments = async () => {
     try {
-      const response = await API.get("/appointments");
+      const response = await API.get("/appointments", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
       setAppointments(response.data || []);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -30,7 +35,7 @@ const AppointmentsPage = () => {
     fetchAppointments();
   }, []);
 
-  // ✅ REAL CANCEL FUNCTION (DELETE FROM DATABASE)
+  // ✅ CANCEL APPOINTMENT
   const handleCancel = async (appointmentId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this appointment?"
@@ -41,12 +46,13 @@ const AppointmentsPage = () => {
     try {
       setActionLoading(true);
 
-      // ✅ API CALL (DELETE)
-      await API.delete(`/appointments/${appointmentId}`);
+      await API.delete(`/appointments/${appointmentId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       alert("Appointment cancelled successfully ✅");
-
-      // ✅ RELOAD LIST
       fetchAppointments();
     } catch (error) {
       console.error("Cancel error:", error);
@@ -82,6 +88,7 @@ const AppointmentsPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-3 sm:p-6">
+
       {/* HEADER */}
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -126,6 +133,7 @@ const AppointmentsPage = () => {
 
           <div className="fixed z-50 inset-x-0 bottom-0 sm:top-1/2 sm:-translate-y-1/2 mx-auto w-full sm:max-w-2xl px-3">
             <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl">
+
               <div className="flex items-center justify-between px-5 py-3 border-b">
                 <h3 className="text-lg font-semibold text-blue-700">
                   Book New Appointment
@@ -146,6 +154,7 @@ const AppointmentsPage = () => {
                   }}
                 />
               </div>
+
             </div>
           </div>
         </>

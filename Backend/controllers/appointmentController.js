@@ -1,150 +1,210 @@
-// controllers/appointmentController.js
+// backend/controllers/appointmentController.js
 import db from '../config/db.js';
 
+// ===================================
 // ✅ CREATE APPOINTMENT
+// ===================================
 export const createAppointment = async (req, res) => {
-    const { patientId, doctorId, date, time, reason } = req.body;
+  const { patientId, doctorId, date, time, reason } = req.body;
 
-    if (!patientId || !doctorId || !date || !time) {
-        return res.status(400).json({ message: 'Missing required appointment fields.' });
+  if (!patientId || !doctorId || !date || !time) {
+    return res
+      .status(400)
+      .json({ message: 'Missing required appointment fields.' });
+  }
+
+  try {
+    // ✅ Check if slot already booked
+    const [existing] = await db.query(
+      `SELECT * FROM Appointment 
+       WHERE Employee_ID = ? AND Date = ? AND Time = ?`,
+      [doctorId, date, time]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        message: 'Appointment slot already booked for this doctor.',
+      });
     }
 
-    try {
-        const [existing] = await db.query(
-            `SELECT * FROM Appointment WHERE Employee_ID = ? AND Date = ? AND Time = ?`,
-            [doctorId, date, time]
-        );
+    const [result] = await db.query(
+      `INSERT INTO Appointment (Patient_ID, Employee_ID, Date, Time, Reason)
+       VALUES (?, ?, ?, ?, ?)`,
+      [patientId, doctorId, date, time, reason]
+    );
 
-        if (existing.length > 0) {
-            return res.status(409).json({ message: 'Appointment slot already booked for this doctor.' });
-        }
-
-        const [result] = await db.query(
-            `INSERT INTO Appointment (Patient_ID, Employee_ID, Date, Time, Reason)
-             VALUES (?, ?, ?, ?, ?)`,
-            [patientId, doctorId, date, time, reason]
-        );
-
-        res.status(201).json({
-            message: 'Appointment booked successfully.',
-            appointmentId: result.insertId
-        });
-    } catch (error) {
-        console.error('Error creating appointment:', error);
-        res.status(500).json({ message: 'Server error during appointment creation.' });
-    }
+    res.status(201).json({
+      message: 'Appointment booked successfully.',
+      appointmentId: result.insertId,
+    });
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res
+      .status(500)
+      .json({ message: 'Server error during appointment creation.' });
+  }
 };
 
-// ✅ GET ALL APPOINTMENTS
+// ===================================
+// ✅ GET ALL APPOINTMENTS (Admin + Receptionist)
+// ===================================
 export const getAllAppointments = async (req, res) => {
-    try {
-        const [appointments] = await db.query(
-            `SELECT 
-                A.Appointment_ID, A.Date, A.Time, A.Reason,
-                P.Name AS Patient_Name, P.Patient_ID,
-                E.Name AS Doctor_Name, E.Employee_ID
-             FROM Appointment A
-             JOIN Patient P ON A.Patient_ID = P.Patient_ID
-             JOIN Employee E ON A.Employee_ID = E.Employee_ID
-             ORDER BY A.Date DESC, A.Time ASC`
-        );
+  try {
+    const [appointments] = await db.query(
+      `SELECT 
+        A.Appointment_ID, 
+        A.Date, 
+        A.Time, 
+        A.Reason,
+        P.Name AS Patient_Name, 
+        P.Patient_ID,
+        E.Name AS Doctor_Name, 
+        E.Employee_ID
+      FROM Appointment A
+      JOIN Patient P ON A.Patient_ID = P.Patient_ID
+      JOIN Employee E ON A.Employee_ID = E.Employee_ID
+      ORDER BY A.Date DESC, A.Time ASC`
+    );
 
-        res.status(200).json(appointments);
-    } catch (error) {
-        console.error('Error fetching all appointments:', error);
-        res.status(500).json({ message: 'Server error while fetching appointments.' });
-    }
+    res.status(200).json(appointments);
+  } catch (error) {
+    console.error('Error fetching all appointments:', error);
+    res
+      .status(500)
+      .json({ message: 'Server error while fetching appointments.' });
+  }
 };
 
-// ✅ GET DOCTOR APPOINTMENTS
+// ===================================
+// ✅ GET DOCTOR APPOINTMENTS (Doctor + Admin)
+// ===================================
 export const getAppointmentsByDoctor = async (req, res) => {
-    const { id } = req.params;
-    const { date } = req.query;
+  const { id } = req.params;
+  const { date } = req.query;
 
-    if (req.user.role === 'Doctor' && req.user.id != id) {
-        return res.status(403).json({ message: 'Forbidden: You can only view your own appointments.' });
-    }
+  // ✅ Doctor can only see his own appointments
+  if (req.user.role === 'Doctor' && req.user.id != id) {
+    return res.status(403).json({
+      message: 'Forbidden: You can only view your own appointments.',
+    });
+  }
 
-    let query = `
-        SELECT 
-            A.Appointment_ID, A.Date, A.Time, A.Reason,
-            P.Name AS Patient_Name, P.Patient_ID
-        FROM Appointment A
-        JOIN Patient P ON A.Patient_ID = P.Patient_ID
-        WHERE A.Employee_ID = ?
-    `;
+  let query = `
+    SELECT 
+      A.Appointment_ID, 
+      A.Date, 
+      A.Time, 
+      A.Reason,
+      P.Name AS Patient_Name, 
+      P.Patient_ID
+    FROM Appointment A
+    JOIN Patient P ON A.Patient_ID = P.Patient_ID
+    WHERE A.Employee_ID = ?
+  `;
 
-    const params = [id];
+  const params = [id];
 
-    if (date) {
-        query += ` AND A.Date = ?`;
-        params.push(date);
-    }
+  if (date) {
+    query += ` AND A.Date = ?`;
+    params.push(date);
+  }
 
-    query += ` ORDER BY A.Time ASC`;
+  query += ` ORDER BY A.Time ASC`;
 
-    try {
-        const [appointments] = await db.query(query, params);
-        res.status(200).json(appointments);
-    } catch (error) {
-        console.error('Error fetching doctor appointments:', error);
-        res.status(500).json({ message: 'Server error while fetching doctor appointments.' });
-    }
+  try {
+    const [appointments] = await db.query(query, params);
+    res.status(200).json(appointments);
+  } catch (error) {
+    console.error('Error fetching doctor appointments:', error);
+    res.status(500).json({
+      message: 'Server error while fetching doctor appointments.',
+    });
+  }
 };
 
-// ✅ UPDATE APPOINTMENT
+// ===================================
+// ✅ UPDATE APPOINTMENT (Receptionist)
+// ===================================
 export const updateAppointment = async (req, res) => {
-    const { id } = req.params;
-    const { doctorId, date, time, reason } = req.body;
+  const { id } = req.params;
+  const { doctorId, date, time, reason } = req.body;
 
-    const setClauses = [];
-    const params = [];
+  const setClauses = [];
+  const params = [];
 
-    if (doctorId) { setClauses.push('Employee_ID = ?'); params.push(doctorId); }
-    if (date) { setClauses.push('Date = ?'); params.push(date); }
-    if (time) { setClauses.push('Time = ?'); params.push(time); }
-    if (reason) { setClauses.push('Reason = ?'); params.push(reason); }
+  if (doctorId) {
+    setClauses.push('Employee_ID = ?');
+    params.push(doctorId);
+  }
+  if (date) {
+    setClauses.push('Date = ?');
+    params.push(date);
+  }
+  if (time) {
+    setClauses.push('Time = ?');
+    params.push(time);
+  }
+  if (reason) {
+    setClauses.push('Reason = ?');
+    params.push(reason);
+  }
 
-    if (setClauses.length === 0) {
-        return res.status(400).json({ message: 'No fields provided for update.' });
+  if (setClauses.length === 0) {
+    return res
+      .status(400)
+      .json({ message: 'No fields provided for update.' });
+  }
+
+  params.push(id);
+
+  try {
+    const [result] = await db.query(
+      `UPDATE Appointment 
+       SET ${setClauses.join(', ')} 
+       WHERE Appointment_ID = ?`,
+      params
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: 'Appointment not found or no changes made.',
+      });
     }
 
-    params.push(id);
-
-    try {
-        const [result] = await db.query(
-            `UPDATE Appointment SET ${setClauses.join(', ')} WHERE Appointment_ID = ?`,
-            params
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Appointment not found or no changes made.' });
-        }
-
-        res.status(200).json({ message: 'Appointment updated successfully.' });
-    } catch (error) {
-        console.error('Error updating appointment:', error);
-        res.status(500).json({ message: 'Server error during appointment update.' });
-    }
+    res.status(200).json({ message: 'Appointment updated successfully.' });
+  } catch (error) {
+    console.error('Error updating appointment:', error);
+    res
+      .status(500)
+      .json({ message: 'Server error during appointment update.' });
+  }
 };
 
-// ✅✅✅ DELETE / CANCEL APPOINTMENT (THIS FIXES YOUR PROBLEM)
+// ===================================
+// ✅✅✅ DELETE / CANCEL APPOINTMENT (Receptionist)
+// ===================================
 export const deleteAppointment = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        const [result] = await db.query(
-            `DELETE FROM Appointment WHERE Appointment_ID = ?`,
-            [id]
-        );
+  try {
+    const [result] = await db.query(
+      `DELETE FROM Appointment WHERE Appointment_ID = ?`,
+      [id]
+    );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Appointment not found.' });
-        }
-
-        res.status(200).json({ message: 'Appointment cancelled successfully.' });
-    } catch (error) {
-        console.error('Error deleting appointment:', error);
-        res.status(500).json({ message: 'Server error while cancelling appointment.' });
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: 'Appointment not found.' });
     }
+
+    res
+      .status(200)
+      .json({ message: 'Appointment cancelled successfully.' });
+  } catch (error) {
+    console.error('Error deleting appointment:', error);
+    res
+      .status(500)
+      .json({ message: 'Server error while cancelling appointment.' });
+  }
 };

@@ -41,7 +41,6 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes); 
-app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/roles', roleRoutes);
 
 // Start Server

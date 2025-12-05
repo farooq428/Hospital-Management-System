@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
@@ -55,8 +54,8 @@ const App = () => {
           <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/employees" element={<EmployeeManagerPage />} />
-            <Route path="/roles" element={<RolesPage />} />      {/* New */}
-            <Route path="/logs" element={<LogsPage />} />        {/* New */}
+            <Route path="/roles" element={<RolesPage />} />
+            <Route path="/logs" element={<LogsPage />} />
           </Route>
 
           {/* Doctor Routes */}
@@ -70,8 +69,8 @@ const App = () => {
             <Route path="/patients/new" element={<NewPatient />} />
             <Route path="/patients/:id" element={<PatientProfile />} />
             <Route path="/appointments/new" element={<NewAppointment />} />
-            <Route path="/bills/new" element={<BillingManagerPage />} />
-            <Route path="/rooms" element={<RoomManagerPage />} />
+            <Route path="/receptionist/bills" element={<BillingManagerPage />} /> {/* updated */}
+            <Route path="/receptionist/rooms" element={<RoomManagerPage />} />    {/* updated */}
           </Route>
 
           {/* Shared Staff Routes */}

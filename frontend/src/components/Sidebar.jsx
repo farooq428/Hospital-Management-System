@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -13,8 +12,8 @@ const navLinks = [
   { name: 'Patient Manager', path: '/patients', icon: '👤', roles: ['Doctor', 'Receptionist'] },
 
   // Receptionist
-  { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] },
-  { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist'] },
+  { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] }, // updated
+  { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist'] },   // updated
 ];
 
 const Sidebar = () => {
@@ -60,7 +59,7 @@ const Sidebar = () => {
                 to={link.path}
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 m-2 rounded-lg font-medium transition-colors
-                  ${isActive ? 'bg-[#3498db] text-white' : 'hover:bg-[#2c5282] hover:text-white'}`
+                  ${isActive ? 'bg-[#3498db] text-white' : 'hover:bg-[#2c5282] hover:text-white'}` 
                 }
                 onClick={() => setIsOpen(false)}
               >
