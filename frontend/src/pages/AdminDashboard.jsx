@@ -1,91 +1,123 @@
 // src/pages/AdminDashboard.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import API from '../api/config';
 
 const AdminDashboard = () => {
-    const navigate = useNavigate();
-    const { user } = useAuth();
-    
-    // ⚠️ Mock Admin Stats
-    const mockStats = [
-        { title: 'Total Employees', value: 55, icon: '👥', color: '#8e44ad' },
-        { title: 'System Roles Defined', value: 4, icon: '🔑', color: '#2c3e50' },
-        { title: 'Current Room Occupancy', value: '75%', icon: '🏥', color: '#16a085' },
-    ];
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    totalRoles: 0,
+    roomOccupancy: '0%'
+  });
+  const [loading, setLoading] = useState(true);
 
-    const handleNavigation = (path) => {
-        navigate(path);
+  // Fetch dashboard stats from backend
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await API.get('/dashboard/admin');
+        setStats({
+          totalEmployees: response.data.totalEmployees,
+          totalRoles: response.data.totalRoles,
+          roomOccupancy: response.data.roomOccupancy
+        });
+      } catch (error) {
+        console.error('Failed to fetch admin stats:', error);
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchStats();
+  }, []);
 
-    return (
-        <div className="admin-dashboard-container" style={{ padding: '20px' }}>
-            <h2>Admin Control Panel, {user?.name || 'Admin'}</h2>
-            <p style={{ color: '#555', marginBottom: '30px' }}>
-                Manage system users, permissions, and resources.
-            </p>
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
-            {/* 1. Stat Cards Row */}
-            <div className="stat-cards-row" style={{ display: 'flex', gap: '20px', marginBottom: '40px' }}>
-                {mockStats.map((stat) => (
-                    // Reusing StatCard component
-                    <StatCard key={stat.title} title={stat.title} value={stat.value} icon={stat.icon} color={stat.color} />
-                ))}
-            </div>
+  const statCards = [
+    { title: 'Total Employees', value: stats.totalEmployees, icon: '👥', color: 'blue' },
+    { title: 'System Roles Defined', value: stats.totalRoles, icon: '🔑', color: 'blue' },
+    { title: 'Current Room Occupancy', value: stats.roomOccupancy, icon: '🏥', color: 'green' },
+  ];
 
-            {/* 2. Main Management Links */}
-            <div className="management-links">
-                <h3>Core Management</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                    <QuickActionButton 
-                        label="Manage Employees" 
-                        icon="🧑‍💼" 
-                        onClick={() => handleNavigation('/employees')} 
-                        color="#8e44ad"
-                    />
-                    <QuickActionButton 
-                        label="Define Roles & Access" 
-                        icon="🔐" 
-                        onClick={() => handleNavigation('/roles')} 
-                        color="#2c3e50"
-                    />
-                    <QuickActionButton 
-                        label="Review System Logs" 
-                        icon="📜" 
-                        onClick={() => alert('Viewing logs...')} 
-                        color="#16a085"
-                    />
-                </div>
-            </div>
-            
-            {/* You can add system settings or charts here later */}
+  return (
+    <div className="min-h-screen p-4 sm:p-8 bg-[#f0f7ff]">
+      {/* Header */}
+      <header className="mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-[#3498db]">
+          Admin Control Panel
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Welcome, {user?.name || 'Admin'} — manage users, roles, and resources.
+        </p>
+      </header>
+
+      {/* Stat Cards */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        {loading ? (
+          <p>Loading stats...</p>
+        ) : (
+          statCards.map((stat) => (
+            <StatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              color={stat.color}
+            />
+          ))
+        )}
+      </section>
+
+      {/* Core Management Buttons */}
+      <section>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-4">Core Management</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <QuickActionButton
+            label="Manage Employees"
+            icon="🧑‍💼"
+            onClick={() => handleNavigation('/employees')}
+            color="blue"
+          />
+          <QuickActionButton
+            label="Define Roles & Access"
+            icon="🔐"
+            onClick={() => handleNavigation('/roles')}
+            color="blue"
+          />
+          <QuickActionButton
+            label="Review System Logs"
+            icon="📜"
+            onClick={() => handleNavigation('/logs')}
+            color="green"
+          />
         </div>
-    );
+      </section>
+    </div>
+  );
 };
 
-// Reusing the QuickActionButton component from the Receptionist step
-const QuickActionButton = ({ label, icon, onClick, color }) => (
-    <button 
-        onClick={onClick}
-        style={{
-            padding: '25px 15px',
-            border: `2px solid ${color}`,
-            borderRadius: '8px',
-            background: color,
-            color: 'white',
-            fontSize: '1.1em',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'opacity 0.3s',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = 0.9}
-        onMouseLeave={e => e.currentTarget.style.opacity = 1}
+const QuickActionButton = ({ label, icon, onClick, color }) => {
+  const colorClasses = {
+    blue: 'bg-[#3498db] hover:bg-[#1e3a8a] border-[#3498db]',
+    green: 'bg-[#2ecc71] hover:bg-[#27ae60] border-[#2ecc71]',
+    red: 'bg-[#e74c3c] hover:bg-[#c0392b] border-[#e74c3c]',
+    yellow: 'bg-[#f1c40f] hover:bg-[#d4ac0d] border-[#f1c40f]',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-6 border-2 rounded-2xl text-white font-semibold text-center text-lg shadow-lg transition transform hover:-translate-y-1 ${colorClasses[color]}`}
     >
-        <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '5px' }}>{icon}</span>
-        {label}
+      <span className="text-4xl mb-2">{icon}</span>
+      {label}
     </button>
-);
+  );
+};
 
 export default AdminDashboard;

@@ -1,154 +1,156 @@
+// employeeController.js
 import db from '../config/db.js';
 import bcrypt from 'bcryptjs';
 
-// --- Role Controllers ---
-
-// @route GET /api/v1/employees/roles
-// Fetches list of roles for the EmployeeForm dropdown.
-// Excludes the 'Patient' role (Role_ID 4) as it's reserved for public self-registration.
+// Get all roles (for dropdowns)
 export const getAllRoles = async (req, res) => {
-    try {
-        const [roles] = await db.query(
-            `SELECT Role_ID, Role_Name 
-             FROM Role 
-             WHERE Role_Name != 'Patient' 
-             ORDER BY Role_ID ASC`
-        );
-        res.status(200).json(roles);
-    } catch (error) {
-        console.error('Error fetching roles:', error);
-        res.status(500).json({ message: 'Server error while fetching roles.' });
-    }
+  try {
+    const [roles] = await db.query(
+      `SELECT Role_ID, Role_Name FROM Role WHERE Role_Name != 'Patient' ORDER BY Role_ID ASC`
+    );
+    res.status(200).json(roles);
+  } catch (error) {
+    console.error('Error fetching roles:', error);
+    res.status(500).json({ message: 'Server error while fetching roles.' });
+  }
 };
 
-// --- Employee Controllers ---
+// Get employees (Admin: all, Receptionist: only doctors, only Active)
+export const getEmployeesByRoleOrAll = async (req, res) => {
+  try {
+    let query;
+    const params = [];
 
-// @route POST /api/v1/employees
-// Used by Admin to create a new employee account. Password is automatically hashed.
+    if (req.user.role === 'Admin') {
+      query = `
+        SELECT E.Employee_ID, E.Name, E.Email, R.Role_Name, R.Role_ID
+        FROM Employee E
+        JOIN Role R ON E.Role_ID = R.Role_ID
+        WHERE R.Role_Name != 'Patient' AND E.Status = 'Active'
+        ORDER BY E.Employee_ID ASC
+      `;
+    } else if (req.user.role === 'Receptionist') {
+      query = `
+        SELECT E.Employee_ID, E.Name, E.Email, R.Role_Name, R.Role_ID
+        FROM Employee E
+        JOIN Role R ON E.Role_ID = R.Role_ID
+        WHERE R.Role_Name = 'Doctor' AND E.Status = 'Active'
+        ORDER BY E.Employee_ID ASC
+      `;
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions.' });
+    }
+
+    const [employees] = await db.query(query, params);
+    res.status(200).json(employees);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ message: 'Server error while fetching employees.' });
+  }
+};
+
+// Create Employee
 export const createEmployee = async (req, res) => {
-    const { name, email, password, roleId } = req.body;
+  const { Name, Email, Password, Role_ID } = req.body;
+  if (!Name || !Email || !Password || !Role_ID) {
+    return res.status(400).json({ message: 'Missing required employee fields.' });
+  }
 
-    if (!name || !email || !password || !roleId) {
-        return res.status(400).json({ message: 'Missing required employee fields.' });
+  try {
+    // Check email uniqueness among active employees
+    const [existing] = await db.query(
+      'SELECT Employee_ID FROM Employee WHERE Email = ? AND Status = "Active"',
+      [Email]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Employee with this email already exists.' });
     }
 
-    try {
-        // 1. Hash the password before storing (using a salt factor of 10)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(Password, salt);
 
-        // 2. Insert new employee record
-        const [result] = await db.query(
-            `INSERT INTO Employee (Name, Role_ID, Email, Password) VALUES (?, ?, ?, ?)`,
-            [name, roleId, email, hashedPassword]
-        );
-        
-        res.status(201).json({ 
-            message: 'Employee account created successfully.', 
-            employeeId: result.insertId 
-        });
+    const [result] = await db.query(
+      `INSERT INTO Employee (Name, Role_ID, Email, Password, Status) VALUES (?, ?, ?, ?, 'Active')`,
+      [Name, Role_ID, Email, hashedPassword]
+    );
 
-    } catch (error) {
-        // Check for duplicate email error (MySQL error code 1062)
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ message: 'Employee with this email already exists.' });
-        }
-        console.error('Error creating employee:', error);
-        res.status(500).json({ message: 'Server error during employee creation.' });
-    }
+    res.status(201).json({ message: 'Employee created successfully', employeeId: result.insertId });
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    res.status(500).json({ message: 'Server error during employee creation.' });
+  }
 };
 
-// @route GET /api/v1/employees
-// Used by Admin to view all employees in the DataTable. Excludes Patient role data.
-export const getAllEmployees = async (req, res) => {
-    try {
-        // Join with Role table to display the readable role name and filter out Patients
-        const [employees] = await db.query(
-            `SELECT E.Employee_ID, E.Name, E.Email, R.Role_Name, R.Role_ID 
-             FROM Employee E
-             JOIN Role R ON E.Role_ID = R.Role_ID
-             WHERE R.Role_Name != 'Patient'
-             ORDER BY E.Employee_ID ASC`
-        );
-        res.status(200).json(employees);
-    } catch (error) {
-        console.error('Error fetching employees:', error);
-        res.status(500).json({ message: 'Server error while fetching employees.' });
-    }
-};
-
-// @route PUT /api/v1/employees/:id
-// Used by Admin to update employee details. Handles optional password change.
+// Update Employee
 export const updateEmployee = async (req, res) => {
-    const { id } = req.params;
-    const { name, email, roleId, password } = req.body; // Added password for optional update
+  const { id } = req.params;
+  const { Name, Email, Role_ID, Password } = req.body;
 
-    if (!name && !email && !roleId && !password) {
-        return res.status(400).json({ message: 'No fields provided for update.' });
-    }
+  if (!Name && !Email && !Role_ID && !Password) {
+    return res.status(400).json({ message: 'No fields provided for update.' });
+  }
 
-    // Build the query dynamically
+  try {
     const setClauses = [];
     const params = [];
-    
-    if (name) { setClauses.push('Name = ?'); params.push(name); }
-    if (email) { setClauses.push('Email = ?'); params.push(email); }
-    if (roleId) { setClauses.push('Role_ID = ?'); params.push(roleId); }
 
-    // Check if password is provided, and hash it if so
-    if (password) {
-        try {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            setClauses.push('Password = ?');
-            params.push(hashedPassword);
-        } catch (hashError) {
-            console.error('Error hashing password during update:', hashError);
-            return res.status(500).json({ message: 'Failed to securely update password.' });
-        }
+    if (Name) { setClauses.push('Name = ?'); params.push(Name); }
+
+    if (Email) {
+      // Check email uniqueness
+      const [existing] = await db.query(
+        'SELECT Employee_ID FROM Employee WHERE Email = ? AND Status = "Active" AND Employee_ID != ?',
+        [Email, id]
+      );
+      if (existing.length > 0) {
+        return res.status(409).json({ message: 'Email already in use by another employee.' });
+      }
+      setClauses.push('Email = ?'); params.push(Email);
     }
 
-    params.push(id); // Add Employee_ID for the WHERE clause
+    if (Role_ID) { setClauses.push('Role_ID = ?'); params.push(Role_ID); }
 
-    try {
-        const [result] = await db.query(
-            `UPDATE Employee SET ${setClauses.join(', ')} WHERE Employee_ID = ?`,
-            params
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Employee not found or no changes made.' });
-        }
-
-        res.status(200).json({ message: 'Employee updated successfully.' });
-    } catch (error) {
-        // Check for duplicate email error
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ message: 'This email is already in use by another account.' });
-        }
-        console.error('Error updating employee:', error);
-        res.status(500).json({ message: 'Server error during employee update.' });
+    if (Password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(Password, salt);
+      setClauses.push('Password = ?'); 
+      params.push(hashedPassword);
     }
+
+    params.push(id);
+
+    const [result] = await db.query(
+      `UPDATE Employee SET ${setClauses.join(', ')} WHERE Employee_ID = ? AND Status = 'Active'`,
+      params
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Employee not found or no changes made.' });
+    }
+
+    res.status(200).json({ message: 'Employee updated successfully.' });
+  } catch (error) {
+    console.error('Error updating employee:', error);
+    res.status(500).json({ message: 'Server error during employee update.' });
+  }
 };
 
-// @route DELETE /api/v1/employees/:id
-// Used by Admin to remove an employee
+// Soft Delete Employee
 export const deleteEmployee = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
+  try {
+    const [result] = await db.query(
+      `UPDATE Employee SET Status = 'Inactive' WHERE Employee_ID = ? AND Status = 'Active'`,
+      [id]
+    );
 
-    try {
-        // IMPORTANT: Ensure foreign key constraints are handled either by CASCADE DELETE 
-        // in your DDL or by explicitly deleting dependent records (Appointments, Prescriptions) first.
-        
-        const [result] = await db.query(`DELETE FROM Employee WHERE Employee_ID = ?`, [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Employee not found.' });
-        }
-
-        res.status(200).json({ message: 'Employee deleted successfully.' });
-    } catch (error) {
-        console.error('Error deleting employee:', error);
-        res.status(500).json({ message: 'Server error during employee deletion. Check for dependent records.' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Employee not found or already inactive.' });
     }
+
+    res.status(200).json({ message: 'Employee marked as inactive successfully.' });
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ message: 'Server error during employee deletion.' });
+  }
 };

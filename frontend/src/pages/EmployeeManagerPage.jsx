@@ -1,83 +1,101 @@
-// src/pages/EmployeeManagerPage.jsx (Mapped to /employees)
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
-import EmployeeForm from '../components/forms/EmployeeForm'; // To be created next
-// import Modal from '../components/Modal'; // Assuming a reusable Modal component
-
-const mockEmployees = [
-    { Employee_ID: 1, Name: 'Dr. Gregory House', Role_Name: 'Doctor', Email: 'ghouse@easycare.com' },
-    { Employee_ID: 2, Name: 'Nurse Alice', Role_Name: 'Nurse', Email: 'alice@easycare.com' },
-    { Employee_ID: 3, Name: 'Bob Smith', Role_Name: 'Receptionist', Email: 'bob@easycare.com' },
-    { Employee_ID: 4, Name: 'CEO Admin', Role_Name: 'Admin', Email: 'system@easycare.com' },
-];
+import EmployeeForm from '../components/forms/EmployeeForm';
+import API from '../api/config';
 
 const EmployeeManagerPage = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingEmployee, setEditingEmployee] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
-    const employeeColumns = [
-        { header: 'ID', accessor: 'Employee_ID' },
-        { header: 'Name', accessor: 'Name' },
-        { header: 'Role', accessor: 'Role_Name' },
-        { header: 'Email', accessor: 'Email' },
-    ];
-    
-    const handleAddOrEdit = (employee = null) => {
-        setEditingEmployee(employee);
-        setIsModalOpen(true);
-    };
+  // Fetch active employees
+  const fetchEmployees = async () => {
+    try {
+      const response = await API.get('/employees');
+      setEmployees(response.data);
+    } catch (error) {
+      console.error('Failed to fetch employees:', error);
+      alert('Error fetching employees');
+    }
+  };
 
-    const employeeActions = [
-        { 
-            label: 'Edit', 
-            handler: (row) => handleAddOrEdit(row),
-            style: { background: '#f39c12', color: 'white', border: 'none', borderRadius: '4px' } 
-        },
-        { 
-            label: 'Delete', 
-            handler: (row) => alert(`Confirm deletion of ${row.Name}?`),
-            style: { background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px' } 
-        },
-    ];
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
-    return (
-        <div style={{ padding: '20px' }}>
-            <h1 style={{ color: '#8e44ad' }}>Employee Management</h1>
-            <button 
-                onClick={() => handleAddOrEdit(null)}
-                style={{ padding: '10px 15px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', marginBottom: '20px' }}
-            >
-                + Add New Employee
-            </button>
-            
-            <DataTable
-                title="Current Staff Roster"
-                columns={employeeColumns}
-                data={mockEmployees}
-                actions={employeeActions}
+  const handleAddOrEdit = (employee = null) => {
+    setEditingEmployee(employee);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (row) => {
+    if (window.confirm(`Mark employee ${row.Name} as inactive?`)) {
+      try {
+        await API.delete(`/employees/${row.Employee_ID}`);
+        alert('Employee has been marked as inactive.');
+        fetchEmployees();
+      } catch (error) {
+        console.error('Delete failed:', error);
+        alert(error.response?.data?.message || 'Failed to delete employee.');
+      }
+    }
+  };
+
+  const employeeColumns = [
+    { header: 'ID', accessor: 'Employee_ID' },
+    { header: 'Name', accessor: 'Name' },
+    { header: 'Role', accessor: 'Role_Name' },
+    { header: 'Email', accessor: 'Email' },
+  ];
+
+  const employeeActions = [
+    {
+      label: 'Edit',
+      handler: handleAddOrEdit,
+      style: { background: '#f39c12', color: 'white', border: 'none', borderRadius: '4px' }
+    },
+    {
+      label: 'Delete',
+      handler: handleDelete,
+      style: { background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px' }
+    }
+  ];
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-purple-700 mb-4">Employee Management</h1>
+      <button
+        onClick={() => handleAddOrEdit(null)}
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl mb-6 transition duration-300"
+      >
+        + Add New Employee
+      </button>
+
+      <DataTable
+        title="Current Staff Roster"
+        columns={employeeColumns}
+        data={employees}
+        actions={employeeActions}
+      />
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 className="text-lg font-semibold border-b pb-2 mb-4">
+              {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+            </h3>
+            <EmployeeForm
+              employeeData={editingEmployee}
+              onClose={() => {
+                setIsModalOpen(false);
+                fetchEmployees();
+              }}
             />
-
-            {/* Modal for adding/editing employees */}
-            {/* {isModalOpen && (
-                <Modal onClose={() => setIsModalOpen(false)} title={editingEmployee ? "Edit Employee" : "Add New Employee"}>
-                    <EmployeeForm 
-                        initialData={editingEmployee} 
-                        isEdit={!!editingEmployee} 
-                        onClose={() => setIsModalOpen(false)} 
-                    />
-                </Modal>
-            )} */}
-             {/* ⚠️ Placeholder until Modal is implemented */}
-            {isModalOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ background: 'white', padding: '30px', borderRadius: '8px', width: '400px' }}>
-                        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>{editingEmployee ? "Edit Employee" : "Add New Employee"}</h3>
-                        <EmployeeForm initialData={editingEmployee} isEdit={!!editingEmployee} onClose={() => setIsModalOpen(false)} />
-                    </div>
-                </div>
-            )}
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default EmployeeManagerPage;

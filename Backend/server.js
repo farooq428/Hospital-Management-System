@@ -1,10 +1,9 @@
-// server.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
 // Import DB connection
-// import db from './config/db.js';
+import db from './config/db.js';
 
 // Import Routes
 import authRoutes from './routes/authRoutes.js';
@@ -15,6 +14,8 @@ import billRoutes from './routes/billRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js'; 
+import roleRoutes from './routes/roleRoutes.js';
 
 dotenv.config();
 
@@ -39,6 +40,9 @@ app.use('/api/v1/bills', billRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes); 
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/roles', roleRoutes);
 
 // Start Server
 app.listen(PORT, () => {

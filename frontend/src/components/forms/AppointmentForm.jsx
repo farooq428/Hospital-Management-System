@@ -1,101 +1,159 @@
 // src/components/forms/AppointmentForm.jsx
 import React, { useState, useEffect } from 'react';
-// import CustomInput, PrimaryButton from '../CustomInput/PrimaryButton'; // Assuming reusable components
+import { useNavigate } from 'react-router-dom';
+import API from '../../api/config';
+import { useAuth } from '../../context/AuthContext';
 
 const AppointmentForm = ({ initialData = {}, isEdit = false }) => {
-    // ⚠️ MOCK Data for Select Inputs
-    const [doctors, setDoctors] = useState([
-        { id: 1, name: 'Dr. Gregory House', role: 'Doctor' },
-        { id: 2, name: 'Dr. Jane Foster', role: 'Doctor' },
-        { id: 3, name: 'Dr. John Carter', role: 'Doctor' },
-    ]);
-    const [patients, setPatients] = useState([
-        { id: 1001, name: 'Elizabeth Swan' },
-        { id: 1002, name: 'Will Turner' },
-        { id: 1003, name: 'Jack Sparrow' },
-    ]);
-    
-    // Form State mapped to Appointment entity attributes
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const token = localStorage.getItem('token');
+
+    const [doctors, setDoctors] = useState([]);
+    const [patients, setPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [formData, setFormData] = useState({
         patientId: initialData.Patient_ID || '',
         doctorId: initialData.Employee_ID || '',
         date: initialData.Date || '',
         time: initialData.Time || '',
-        reason: initialData.Reason || '', // Custom field for better context
+        reason: initialData.Reason || '',
     });
-    
-    // In a real app, you would fetch the list of Doctors and Patients here
+
     useEffect(() => {
-        // fetch Doctors: `/api/v1/employees?role=Doctor`
-        // fetch Patients for search: `/api/v1/patients/names`
-    }, []);
+        const fetchData = async () => {
+            try {
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                const [doctorsRes, patientsRes] = await Promise.all([
+                    API.get('/employees?role=Doctor', config),
+                    API.get('/patients', config),
+                ]);
+                setDoctors(doctorsRes.data);
+                setPatients(patientsRes.data);
+            } catch (error) {
+                console.error('Failed to fetch patients or doctors:', error);
+                alert('Cannot load doctors or patients. Check your permissions.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [token]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        console.log('Submitting Appointment Data:', formData);
-        
-        // 1. Validation (e.g., check if the slot is free)
-        // 2. API Call (POST or PUT)
-
-        alert(isEdit ? 'Appointment Updated Successfully!' : 'New Appointment Booked!');
-        // On success, navigate back to the dashboard or clear form.
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            if (isEdit) {
+                await API.put(`/appointments/${initialData.Appointment_ID}`, formData, config);
+                alert('Appointment updated successfully!');
+            } else {
+                await API.post('/appointments', formData, config);
+                alert('Appointment booked successfully!');
+            }
+            navigate('/appointments');
+        } catch (error) {
+            console.error('Failed to submit appointment:', error);
+            alert('Failed to submit appointment. Check your inputs or permissions.');
+        }
     };
 
+    if (loading) return <div className="p-6">Loading form data...</div>;
+
     return (
-        <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '30px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }}>
-            <h4 style={{ color: '#2980b9' }}>{isEdit ? 'Edit Appointment' : 'Book New Appointment'}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                
-                {/* 1. Patient Selection (Connects to Patient Entity) */}
+        <form 
+            onSubmit={handleSubmit} 
+            className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto"
+        >
+            <h3 className="text-xl font-semibold text-blue-600 mb-4">
+                {isEdit ? 'Edit Appointment' : 'Book New Appointment'}
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label>Patient:</label>
-                    <select name="patientId" value={formData.patientId} onChange={handleChange} required>
-                        <option value="">Select Existing Patient</option>
+                    <label className="block text-gray-700 mb-1">Patient</label>
+                    <select
+                        name="patientId"
+                        value={formData.patientId}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border rounded"
+                    >
+                        <option value="">Select Patient</option>
                         {patients.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} (ID: {p.id})</option>
+                            <option key={p.Patient_ID} value={p.Patient_ID}>{p.Name}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* 2. Doctor Selection (Connects to Employee Entity) */}
                 <div>
-                    <label>Doctor:</label>
-                    <select name="doctorId" value={formData.doctorId} onChange={handleChange} required>
+                    <label className="block text-gray-700 mb-1">Doctor</label>
+                    <select
+                        name="doctorId"
+                        value={formData.doctorId}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border rounded"
+                    >
                         <option value="">Select Doctor</option>
                         {doctors.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
+                            <option key={d.Employee_ID} value={d.Employee_ID}>{d.Name}</option>
                         ))}
                     </select>
                 </div>
-                
-                {/* 3. Date and Time Selection (Appointment Entity) */}
+
                 <div>
-                    <label>Date:</label>
-                    <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+                    <label className="block text-gray-700 mb-1">Date</label>
+                    <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border rounded"
+                    />
                 </div>
+
                 <div>
-                    <label>Time Slot:</label>
-                    <input type="time" name="time" value={formData.time} onChange={handleChange} required />
+                    <label className="block text-gray-700 mb-1">Time</label>
+                    <input
+                        type="time"
+                        name="time"
+                        value={formData.time}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border rounded"
+                    />
                 </div>
             </div>
-            
-            {/* 4. Reason for Appointment */}
-            <div style={{ marginBottom: '20px' }}>
-                <label>Reason for Visit:</label>
-                <textarea name="reason" rows="3" value={formData.reason} onChange={handleChange} placeholder="Briefly describe the reason for the appointment." required />
+
+            <div className="mb-4">
+                <label className="block text-gray-700 mb-1">Reason</label>
+                <textarea
+                    name="reason"
+                    rows="3"
+                    value={formData.reason}
+                    onChange={handleChange}
+                    placeholder="Reason for appointment"
+                    required
+                    className="w-full p-2 border rounded"
+                />
             </div>
-            
-            <button type="submit" style={{ padding: '10px 20px', background: isEdit ? '#f39c12' : '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                {isEdit ? 'Update Booking' : 'Confirm Booking'}
+
+            <button 
+                type="submit"
+                className={`w-full py-2 rounded text-white ${isEdit ? 'bg-yellow-600' : 'bg-blue-600'} hover:opacity-90`}
+            >
+                {isEdit ? 'Update Appointment' : 'Book Appointment'}
             </button>
         </form>
     );
 };
 
-export default AppointmentForm; 
+export default AppointmentForm;

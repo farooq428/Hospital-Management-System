@@ -5,7 +5,7 @@ import * as appointmentController from '../controllers/appointmentController.js'
 
 const router = express.Router();
 
-// 1. Create Appointment (Used by Receptionist, ties to PatientForm/AppointmentForm)
+// 1. Create Appointment (Receptionist)
 router.post(
     '/',
     protect,
@@ -13,7 +13,7 @@ router.post(
     appointmentController.createAppointment
 );
 
-// 2. Get All Appointments (for Receptionist manager view)
+// 2. Get All Appointments (Receptionist + Admin)
 router.get(
     '/',
     protect,
@@ -21,7 +21,7 @@ router.get(
     appointmentController.getAllAppointments
 );
 
-// 3. Get Appointments for a Specific Doctor (for DoctorDashboard calendar)
+// 3. Get Appointments for a Specific Doctor (Doctor + Admin)
 router.get(
     '/doctor/:id',
     protect,
@@ -29,12 +29,20 @@ router.get(
     appointmentController.getAppointmentsByDoctor
 );
 
-// 4. Update/Cancel Appointment (Used by Receptionist)
+// 4. Update Appointment (Receptionist)
 router.put(
     '/:id',
     protect,
     restrictTo('Receptionist'),
     appointmentController.updateAppointment
+);
+
+// ✅ 5. DELETE / Cancel Appointment (Receptionist) ✅✅✅
+router.delete(
+    '/:id',
+    protect,
+    restrictTo('Receptionist'),
+    appointmentController.deleteAppointment
 );
 
 export default router;

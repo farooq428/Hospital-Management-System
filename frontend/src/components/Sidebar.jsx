@@ -1,69 +1,93 @@
 // src/components/Sidebar.jsx
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-// Define Navigation links based on required role(s)
 const navLinks = [
-    { name: 'Dashboard', path: '/', icon: '🏠', roles: ['Admin', 'Doctor', 'Receptionist'] },
-    { name: 'Appointments', path: '/appointments', icon: '📅', roles: ['Receptionist', 'Doctor'] },
-    { name: 'Patient Manager', path: '/patients', icon: '👤', roles: ['Receptionist', 'Doctor'] },
-    { name: 'Billing Manager', path: '/bills', icon: '💳', roles: ['Receptionist'] },
-    { name: 'Room Manager', path: '/rooms', icon: '🛏️', roles: ['Receptionist', 'Admin'] },
-    { name: 'Employee Manager', path: '/employees', icon: '🧑‍💼', roles: ['Admin'] },
+  // Admin
+  { name: 'Dashboard', path: '/', icon: '🏠', roles: ['Admin', 'Doctor', 'Receptionist'] },
+  { name: 'Employee Manager', path: '/employees', icon: '🧑‍💼', roles: ['Admin'] },
+  
+  // Doctor
+  { name: 'Appointments', path: '/appointments', icon: '📅', roles: ['Doctor', 'Receptionist'] },
+  { name: 'Patient Manager', path: '/patients', icon: '👤', roles: ['Doctor', 'Receptionist'] },
+
+  // Receptionist
+  { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] },
+  { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist'] },
 ];
 
 const Sidebar = () => {
-    const { user, logout } = useAuth(); // Get user object (which contains the role)
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
-    // User must be authenticated to show the sidebar
-    if (!user) return null; 
+  if (!user || location.pathname === '/login') return null;
 
-    const userRole = user.role;
+  const userRole = user.role;
 
-    return (
-        <div style={styles.sidebar}>
-            <h2 style={styles.logo}>EasyCare HMS</h2>
-            <p style={styles.roleLabel}>Role: **{userRole}**</p>
-            <hr style={styles.separator} />
-            
-            <nav>
-                {navLinks
-                    .filter(link => link.roles.includes(userRole)) // <-- Filter based on user's role
-                    .map(link => (
-                        <NavLink key={link.name} to={link.path} style={({ isActive }) => ({
-                            ...styles.navItem,
-                            ...(isActive ? styles.activeNavItem : {})
-                        })}>
-                            <span style={styles.navIcon}>{link.icon}</span>
-                            {link.name}
-                        </NavLink>
-                    ))}
-            </nav>
+  return (
+    <>
+      {/* Mobile Hamburger */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-white bg-[#1e3a8a] p-2 rounded-md shadow-lg focus:outline-none"
+        >
+          {isOpen ? '✖️' : '☰'}
+        </button>
+      </div>
 
-            <button onClick={logout} style={styles.logoutButton}>
-                Log Out
-            </button>
+      {/* Sidebar */}
+      <div className={`fixed top-0 left-0 h-screen bg-[#1e3a8a] text-white flex flex-col shadow-lg
+        ${isOpen ? 'w-64' : 'w-0 overflow-hidden'} 
+        md:w-64 transition-all duration-300 ease-in-out`}
+      >
+        <div className="text-center py-6 font-bold text-2xl border-b border-[#3498db]">
+          EasyCare HMS
         </div>
-    );
-};
 
-// ... (Define styles.js or inline styles used above)
-const styles = {
-    // ... (Your previous styles for sidebar, navItem, etc.)
-    roleLabel: { 
-        color: '#ccc', 
-        fontSize: '0.9em', 
-        padding: '0 15px 10px', 
-        borderBottom: '1px solid #333' 
-    },
-    logoutButton: {
-        // ...
-        position: 'absolute',
-        bottom: '20px',
-        width: 'calc(100% - 30px)',
-    }
-    // ...
+        <p className="text-[#eaf2fb] text-sm px-4 py-2 border-b border-[#3498db]">
+          Role: {userRole}
+        </p>
+
+        <nav className="flex-1 mt-4">
+          {navLinks
+            .filter(link => link.roles.includes(userRole))
+            .map(link => (
+              <NavLink
+                key={link.name}
+                to={link.path}
+                className={({ isActive }) =>
+                  `flex items-center px-4 py-3 m-2 rounded-lg font-medium transition-colors
+                  ${isActive ? 'bg-[#3498db] text-white' : 'hover:bg-[#2c5282] hover:text-white'}`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <span className="mr-3">{link.icon}</span>
+                {link.name}
+              </NavLink>
+            ))}
+        </nav>
+
+        <div className="p-4">
+          <button
+            onClick={logout}
+            className="w-full bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 rounded-lg font-semibold transition-colors"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-black opacity-50 z-40 md:hidden"
+        />
+      )}
+    </>
+  );
 };
 
 export default Sidebar;
