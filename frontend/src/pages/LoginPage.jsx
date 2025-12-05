@@ -2,86 +2,93 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-// import CustomInput from '../components/CustomInput'; 
-// import PrimaryButton from '../components/PrimaryButton';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(''); // State to hold API error message
-    
-    // --- CORRECTION 1: Only need the 'login' function ---
-    const { login } = useAuth(); 
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-    // --- CORRECTION 2: handleSubmit must be asynchronous (async) ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(''); // Clear previous errors
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-        // 1. Attempt API Login
-        // The 'login' function returns true on success, or the error message on failure
-        const result = await login(email, password);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-        if (result === true) {
-            // 2. Login was successful. We don't need manual redirection here
-            // because App.jsx has a <Navigate to="/" /> on successful login,
-            // and the '/' route then redirects based on the user's role.
-            // However, a slight delay helps context update:
-            navigate('/');
-        } else {
-            // 3. Login failed (result contains the error message from the AuthContext)
-            setError(result || 'Invalid credentials or server error.');
-        }
-    };
+    const result = await login(email, password);
 
-    return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f4f7f6' }}>
-            <div style={{ width: 400, padding: 40, background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: 30, color: '#3498db' }}>EasyCare Hospital Login</h2>
-                
-                {/* Display Error Message */}
-                {error && (
-                    <div style={{ color: '#e74c3c', textAlign: 'center', marginBottom: 15, padding: '10px', border: '1px solid #e74c3c', borderRadius: '4px', background: '#fdd' }}>
-                        {error}
-                    </div>
-                )}
-                
-                <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: 15 }}>
-                        <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        />
-                    </div>
-                    <div style={{ marginBottom: 20 }}>
-                        <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        />
-                    </div>
-                    <button 
-                        type="submit" 
-                        style={{ width: '100%', padding: '12px', background: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                        Login
-                    </button>
-                    
-                    <p style={{ marginTop: '20px', fontSize: '0.85em', color: '#7f8c8d', textAlign: 'center' }}>
-                        **Test Credentials:** admin@easycare.com, house@easycare.com, penny@easycare.com (Password: password123)
-                    </p>
-                </form>
-            </div>
+    if (result === true) {
+      navigate('/');
+    } else {
+      setError(result || 'Invalid credentials or server error.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-neutral px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 sm:p-10">
+        
+        {/* Title */}
+        <h2 className="text-3xl sm:text-4xl font-bold text-center text-primary mb-8">
+          EasyCare Hospital Login
+        </h2>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 text-center text-danger bg-danger/20 border border-danger px-4 py-2 rounded-md">
+            {error}
+          </div>
+        )}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Enter your password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full bg-primary hover:bg-secondary text-white font-semibold py-2 rounded-xl transition duration-300"
+          >
+            Login
+          </button>
+        </form>
+
+        {/* Optional: Forgot Password */}
+        <div className="text-center mt-4 text-sm text-gray-500">
+          <a href="#" className="hover:text-primary transition">Forgot Password?</a>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default LoginPage;

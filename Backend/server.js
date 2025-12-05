@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 // Import DB connection
-import db from './config/db.js';
+// import db from './config/db.js';
 
 // Import Routes
 import authRoutes from './routes/authRoutes.js';

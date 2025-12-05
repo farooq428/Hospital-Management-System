@@ -43,10 +43,10 @@ const HomePage = () => {
     return (
         <div style={{ padding: '20px', minHeight: '100vh', background: '#f8f9fa' }}>
             <header style={styles.header}>
-                <h1 style={{ margin: 0 }}>EasyCare Hospital System</h1>
+                <h1 style={{ margin: 0 , color: 'black'}}>EasyCare </h1>
                 {/* Public Navigation */}
                 <nav>
-                    <button onClick={() => navigate('/')} style={styles.navButton}>Home</button>
+                    {/* <button onClick={() => navigate('/')} style={styles.navButton}>Home</button> */}
                     <button onClick={() => handleProtectedAction('appointment')} style={styles.navButton}>Book Appointment</button>
                     <button onClick={() => navigate('/login')} style={styles.navButton}>Staff Login</button>
                 </nav>
@@ -63,7 +63,7 @@ const HomePage = () => {
                             onClick={() => handleProtectedAction('appointment')} 
                             style={styles.actionButton}
                         >
-                            Select & Book
+                            Select & Book appointment
                         </button>
                     </div>
                 ))}
