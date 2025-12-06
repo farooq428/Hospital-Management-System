@@ -91,3 +91,14 @@ export const deletePatient = async (req, res) => {
         res.status(500).json({ message: 'Server error during patient deletion.' });
     }
 };
+
+// Get total patients (for Admin Dashboard)
+export const getTotalPatients = async (req, res) => {
+  try {
+    const [result] = await db.query(`SELECT COUNT(*) AS totalPatients FROM Patient`);
+    res.status(200).json({ totalPatients: result[0]?.totalPatients || 0 });
+  } catch (error) {
+    console.error('Error fetching total patients:', error);
+    res.status(500).json({ message: 'Server error while fetching total patients.' });
+  }
+};
