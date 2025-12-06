@@ -1,67 +1,95 @@
-// src/components/forms/RoomAssignmentForm.jsx
-import React, { useState } from 'react';
-
-const mockPatients = [
-    { id: 1007, name: 'Zoe Washburne' },
-    { id: 1008, name: 'Mal Reynolds' },
-];
+import React, { useState, useEffect } from 'react';
+import API from '../../api/config';
 
 const RoomAssignmentForm = ({ room, onAssign }) => {
+    const [patients, setPatients] = useState([]);
     const [formData, setFormData] = useState({
         patientId: '',
-        admissionDate: new Date().toISOString().slice(0, 16), // Default to current time
+        admissionDate: new Date().toISOString().slice(0, 16),
     });
+    const [loadingPatients, setLoadingPatients] = useState(true);
+
+    // Fetch all patients from backend
+    const fetchPatients = async () => {
+        setLoadingPatients(true);
+        try {
+            const res = await API.get('/patients'); // Assumes route exists to fetch all patients
+            setPatients(res.data);
+        } catch (err) {
+            console.error('Failed to fetch patients:', err);
+            alert('Error fetching patients from server.');
+        } finally {
+            setLoadingPatients(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPatients();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        const assignmentData = {
-            Room_ID: room.Room_ID,
-            ...formData
-        };
-
-        console.log('New Room Assignment Data:', assignmentData);
-        // API Call: POST /api/v1/room-assignment
-
-        alert(`Patient ${formData.patientId} assigned to Room ${room.Room_ID}!`);
-        onAssign(); 
+        try {
+            await API.post('/rooms/assign', {
+                roomId: room.Room_ID,
+                patientId: formData.patientId,
+                admissionDate: formData.admissionDate,
+            });
+            alert(`Patient assigned to Room ${room.Room_ID} successfully.`);
+            onAssign();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || 'Error assigning patient.');
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '15px' }}>
-            <p>Assigning to **Room {room.Room_ID}** ({room.Room_Type})</p>
-            
-            {/* Patient Selection (Key Foreign Key) */}
+        <form onSubmit={handleSubmit} className="grid gap-4">
+            <p className="font-semibold">
+                Assigning to Room {room.Room_ID} ({room.Room_Type})
+            </p>
+
+            {/* Patient Selection */}
             <div>
-                <label>Select Patient for Admission:</label>
-                <select name="patientId" value={formData.patientId} onChange={handleChange} required>
+                <label className="block mb-1">Select Patient:</label>
+                <select
+                    name="patientId"
+                    value={formData.patientId}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded px-2 py-1"
+                    disabled={loadingPatients}
+                >
                     <option value="">Select Patient</option>
-                    {mockPatients.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} (ID: {p.id})</option>
+                    {patients.map(p => (
+                        <option key={p.Patient_ID} value={p.Patient_ID}>
+                            {p.Name} (ID: {p.Patient_ID})
+                        </option>
                     ))}
                 </select>
             </div>
-            
-            {/* Admission Date/Time */}
+
+            {/* Admission Date */}
             <div>
-                <label>Admission Date/Time:</label>
-                <input 
-                    name="admissionDate" 
-                    type="datetime-local" 
-                    value={formData.admissionDate} 
-                    onChange={handleChange} 
-                    required 
+                <label className="block mb-1">Admission Date/Time:</label>
+                <input
+                    type="datetime-local"
+                    name="admissionDate"
+                    value={formData.admissionDate}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded px-2 py-1"
                 />
             </div>
-            
-            <button 
-                type="submit" 
-                style={{ padding: '10px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}
+
+            <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
                 Confirm Admission
             </button>

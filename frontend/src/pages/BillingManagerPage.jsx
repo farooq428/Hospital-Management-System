@@ -1,73 +1,131 @@
-// src/pages/BillingManagerPage.jsx (Mapped to /bills)
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
-import { useNavigate } from 'react-router-dom';
-// import BillForm from '../components/forms/BillForm'; // To be implemented next
-
-const mockBills = [
-    { Bill_ID: 5001, Patient_ID: 1001, Patient_Name: 'Elizabeth Swan', Date: '2025-11-20', Amount: 150.00, Status: 'Paid' },
-    { Bill_ID: 5002, Patient_ID: 1003, Patient_Name: 'Jack Sparrow', Date: '2025-12-01', Amount: 450.50, Status: 'Pending' },
-    { Bill_ID: 5003, Patient_ID: 1002, Patient_Name: 'Will Turner', Date: '2025-12-03', Amount: 95.00, Status: 'Paid' },
-];
+import BillForm from '../components/forms/BillForm';
+import API from '../api/config';
 
 const BillingManagerPage = () => {
-    const navigate = useNavigate();
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [selectedBill, setSelectedBill] = useState(null);
+  const [bills, setBills] = useState([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-    const billColumns = [
-        { header: 'Bill ID', accessor: 'Bill_ID' },
-        { header: 'Patient ID', accessor: 'Patient_ID' },
-        { header: 'Patient Name', accessor: 'Patient_Name' },
-        { header: 'Date', accessor: 'Date' },
-        { header: 'Amount', accessor: 'Amount' },
-        { header: 'Status', accessor: 'Status' },
-    ];
-    
-    const handleGenerateNew = () => {
-        setSelectedBill(null);
-        setIsFormOpen(true);
+  // Fetch bills from backend
+  useEffect(() => {
+    const fetchBills = async () => {
+      try {
+        const res = await API.get('/bills');
+        setBills(res.data);
+      } catch (err) {
+        console.error('Failed to fetch bills:', err);
+      }
     };
+    fetchBills();
+  }, []);
 
-    const billActions = [
-        { 
-            label: 'View/Pay', 
-            handler: (row) => alert(`Viewing Bill ID: ${row.Bill_ID}. Status: ${row.Status}`),
-            style: { background: '#2980b9', color: 'white', border: 'none', borderRadius: '4px' } 
-        },
-    ];
+  const billColumns = [
+    { header: 'Bill ID', accessor: 'Bill_ID' },
+    { header: 'Patient ID', accessor: 'Patient_ID' },
+    { header: 'Patient Name', accessor: 'Patient_Name' },
+    { header: 'Date', accessor: 'Date' },
+    { header: 'Amount', accessor: 'Amount' },
+    { header: 'Status', accessor: 'Status' },
+  ];
 
-    return (
-        <div style={{ padding: '20px' }}>
-            <h1 style={{ color: '#27ae60' }}>Billing and Payments Manager</h1>
-            
-            <button 
-                onClick={handleGenerateNew}
-                style={{ padding: '10px 15px', background: '#f1c40f', color: 'black', border: 'none', borderRadius: '4px', marginBottom: '20px' }}
-            >
-                + Generate New Bill
-            </button>
-            
-            {/* ⚠️ Placeholder for BillForm Modal */}
-            {isFormOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ background: 'white', padding: '30px', borderRadius: '8px', width: '500px' }}>
-                        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>Generate Bill</h3>
-                        {/* <BillForm onClose={() => setIsFormOpen(false)} /> */}
-                        <p>Bill Form goes here.</p>
-                        <button onClick={() => setIsFormOpen(false)} style={{ marginTop: '15px' }}>Close</button>
-                    </div>
-                </div>
-            )}
+  const handlePrintBill = async (row) => {
+    const amount = parseFloat(row.Amount); // Fix for string from backend
 
-            <DataTable
-                title="Recent Bills"
-                columns={billColumns}
-                data={mockBills}
-                actions={billActions}
-            />
+    const printContent = `
+      <html>
+        <head>
+          <title>Bill ID: ${row.Bill_ID}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { color: #27ae60; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
+          </style>
+        </head>
+        <body>
+          <h2>EasyCare HMS - Bill</h2>
+          <p><strong>Bill ID:</strong> ${row.Bill_ID}</p>
+          <p><strong>Patient:</strong> ${row.Patient_Name} (ID: ${row.Patient_ID})</p>
+          <p><strong>Date:</strong> ${row.Date}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Services / Consultation</td>
+                <td>${amount.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><strong>Status:</strong> ${row.Status}</p>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+
+    // Mark as Paid if pending
+    if (row.Status === 'Pending') {
+      try {
+        await API.put(`/bills/${row.Bill_ID}/status`, { status: 'Paid' });
+        setBills(prev =>
+          prev.map(b => b.Bill_ID === row.Bill_ID ? { ...b, Status: 'Paid' } : b)
+        );
+      } catch (err) {
+        console.error('Failed to update bill status:', err);
+        alert('Failed to mark bill as Paid.');
+      }
+    }
+  };
+
+  const billActions = [
+    {
+      label: 'Print Bill',
+      handler: handlePrintBill,
+      style: { background: '#2980b9', color: 'white', borderRadius: '4px', border: 'none' },
+    },
+  ];
+
+  const handleAddBill = (newBill) => {
+    setBills(prev => [newBill, ...prev]);
+  };
+
+  return (
+    <div className="p-4 sm:p-6 md:p-8">
+      <h1 className="text-2xl font-bold text-green-600 mb-4">Billing and Payments Manager</h1>
+
+      <button
+        onClick={() => setIsFormOpen(true)}
+        className="mb-6 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 rounded shadow font-semibold transition"
+      >
+        + Generate New Bill
+      </button>
+
+      {/* BillForm Modal */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
+            <BillForm onClose={() => setIsFormOpen(false)} onSubmit={handleAddBill} />
+          </div>
         </div>
-    );
+      )}
+
+      {/* Bills DataTable */}
+      <div className="overflow-x-auto">
+        <DataTable title="Recent Bills" columns={billColumns} data={bills} actions={billActions} />
+      </div>
+    </div>
+  );
 };
 
 export default BillingManagerPage;

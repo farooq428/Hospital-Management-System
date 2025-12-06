@@ -1,4 +1,3 @@
-// src/components/RoomCard.jsx
 import React from 'react';
 
 const getStatusColor = (status) => {
@@ -16,40 +15,26 @@ const RoomCard = ({ room, onAction }) => {
     return (
         <div 
             onClick={() => onAction(room)}
-            style={{
-                border: `2px solid ${cardColor}`,
-                borderRadius: '8px',
-                padding: '15px',
-                textAlign: 'center',
-                backgroundColor: '#fff',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.05)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            className="border rounded-lg p-4 text-center bg-white shadow hover:shadow-lg cursor-pointer transition transform hover:-translate-y-1"
+            style={{ borderColor: cardColor }}
         >
-            <h4 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>Room {room.Room_ID}</h4>
-            <p style={{ margin: 0, fontSize: '0.9em', color: '#7f8c8d' }}>{room.Room_Type}</p>
-            <div style={{ height: '3px', background: cardColor, margin: '10px 0' }}></div>
-            
-            <p style={{ fontWeight: 'bold', color: cardColor, margin: '5px 0' }}>{room.Status}</p>
-            
+            <h4 className="text-lg font-semibold text-gray-800 mb-1">Room {room.Room_ID}</h4>
+            <p className="text-sm text-gray-500 mb-2">{room.Room_Type}</p>
+            <div className="h-1 w-full mb-2 rounded" style={{ backgroundColor: cardColor }}></div>
+
+            <p className={`font-bold mb-2`} style={{ color: cardColor }}>
+                {room.Status}
+            </p>
+
             {room.Patient_Name && (
-                <p style={{ fontSize: '0.9em', margin: '5px 0 0 0' }}>
-                    Patient: **{room.Patient_Name}**
+                <p className="text-sm text-gray-700 mb-2">
+                    Patient: <span className="font-medium">{room.Patient_Name}</span>
                 </p>
             )}
-            
-            <button 
-                style={{ 
-                    marginTop: '10px', 
-                    padding: '5px 10px', 
-                    background: cardColor, 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px' 
-                }}
+
+            <button
+                className={`px-3 py-1 rounded text-white font-medium`}
+                style={{ backgroundColor: cardColor }}
             >
                 {room.Status === 'Available' ? 'Assign Bed' : 'Discharge Patient'}
             </button>
