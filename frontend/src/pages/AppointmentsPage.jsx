@@ -1,4 +1,3 @@
-// src/pages/AppointmentsPage.jsx
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
 import AppointmentForm from "../components/forms/AppointmentForm";
@@ -14,7 +13,6 @@ const AppointmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // ✅✅✅ FETCH APPOINTMENTS WITH TOKEN
   const fetchAppointments = async () => {
     try {
       const response = await API.get("/appointments", {
@@ -22,7 +20,6 @@ const AppointmentsPage = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-
       setAppointments(response.data || []);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -35,7 +32,7 @@ const AppointmentsPage = () => {
     fetchAppointments();
   }, []);
 
-  // ✅ CANCEL APPOINTMENT
+  // ✅✅✅ CANCEL + INSTANT UI UPDATE
   const handleCancel = async (appointmentId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this appointment?"
@@ -46,17 +43,29 @@ const AppointmentsPage = () => {
     try {
       setActionLoading(true);
 
-      await API.delete(`/appointments/${appointmentId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await API.put(
+        `/appointments/cancel/${appointmentId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      alert("Appointment cancelled successfully ✅");
-      fetchAppointments();
+      // ✅✅✅ INSTANT UI CHANGE
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.Appointment_ID === appointmentId
+            ? { ...appt, Status: "Cancelled" }
+            : appt
+        )
+      );
+
+      alert("Appointment cancelled ✅");
     } catch (error) {
       console.error("Cancel error:", error);
-      alert("Failed to cancel appointment ❌");
+      alert("Cancel failed ❌");
     } finally {
       setActionLoading(false);
     }
@@ -69,6 +78,7 @@ const AppointmentsPage = () => {
     { header: "Patient", accessor: "Patient_Name" },
     { header: "Doctor", accessor: "Doctor_Name" },
     { header: "Reason", accessor: "Reason" },
+    { header: "Status", accessor: "Status" }, // ✅ STATUS COLUMN
   ];
 
   const appointmentActions = [
@@ -90,27 +100,24 @@ const AppointmentsPage = () => {
     <div className="w-full min-h-screen bg-gray-50 p-3 sm:p-6">
 
       {/* HEADER */}
-      <div className="bg-white rounded-xl shadow p-4 sm:p-6 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-700">
-              Appointment Manager
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Manage all scheduled appointments
-            </p>
-          </div>
-
-          {isReceptionist && (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white
-                px-5 py-3 sm:py-2 rounded-lg font-semibold shadow transition"
-            >
-              + Book New Appointment
-            </button>
-          )}
+      <div className="bg-white rounded-xl shadow p-4 mb-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-blue-700">
+            Appointment Manager
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Manage all scheduled appointments
+          </p>
         </div>
+
+        {isReceptionist && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold"
+          >
+            + Book Appointment
+          </button>
+        )}
       </div>
 
       {/* TABLE */}
@@ -123,44 +130,7 @@ const AppointmentsPage = () => {
         />
       </div>
 
-      {/* MODAL */}
-      {isModalOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50"
-            onClick={() => setIsModalOpen(false)}
-          />
-
-          <div className="fixed z-50 inset-x-0 bottom-0 sm:top-1/2 sm:-translate-y-1/2 mx-auto w-full sm:max-w-2xl px-3">
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl">
-
-              <div className="flex items-center justify-between px-5 py-3 border-b">
-                <h3 className="text-lg font-semibold text-blue-700">
-                  Book New Appointment
-                </h3>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="p-4 sm:p-6">
-                <AppointmentForm
-                  onClose={() => {
-                    setIsModalOpen(false);
-                    fetchAppointments();
-                  }}
-                />
-              </div>
-
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ✅ LOADING OVERLAY WHEN CANCELLING */}
+      {/* LOADING OVERLAY */}
       {actionLoading && (
         <div className="fixed inset-0 z-[100] bg-black/30 flex items-center justify-center">
           <div className="bg-white px-6 py-3 rounded-lg shadow text-blue-700 font-semibold">

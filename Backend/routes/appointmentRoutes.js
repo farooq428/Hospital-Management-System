@@ -45,4 +45,11 @@ router.delete(
   appointmentController.deleteAppointment
 );
 
+router.put(
+  '/cancel/:id',
+  protect,
+  restrictTo('Receptionist'),
+  appointmentController.cancelAppointment   // ✅ NEW CONTROLLER
+);
+
 export default router;

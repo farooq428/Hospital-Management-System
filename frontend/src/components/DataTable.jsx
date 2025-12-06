@@ -1,135 +1,109 @@
-// src/components/DataTable.jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
-// --- STYLING (Inline or use CSS/MUI later) ---
-const tableStyles = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    marginTop: '15px'
-};
+const DataTable = ({ columns, data, actions, title }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 8;
 
-const headerStyles = {
-    background: '#3498db', // EasyCare Blue
-    color: 'white',
-    padding: '12px 15px',
-    textAlign: 'left',
-    fontSize: '0.9em',
-    fontWeight: '600'
-};
+  const totalPages = Math.ceil(data.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentData = data.slice(startIndex, endIndex);
 
-const rowStyles = {
-    borderBottom: '1px solid #ecf0f1',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-};
+  return (
+    <div className="w-full">
+      {title && (
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">
+          {title}
+        </h3>
+      )}
 
-const cellStyles = {
-    padding: '12px 15px',
-    textAlign: 'left',
-    color: '#34495e'
-};
+      <div className="overflow-x-auto rounded-xl border">
+        <table className="min-w-full text-sm text-left">
+          <thead className="bg-blue-600 text-white">
+            <tr>
+              {columns.map((col, index) => (
+                <th key={index} className="px-4 py-3 font-semibold">
+                  {col.header}
+                </th>
+              ))}
+              {actions?.length > 0 && (
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              )}
+            </tr>
+          </thead>
 
-const DataTable = ({ columns, data, onRowClick, actions, title }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const rowsPerPage = 10; // Fixed pagination size for simplicity
-
-    // Pagination Logic
-    const totalPages = Math.ceil(data.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const currentData = data.slice(startIndex, endIndex);
-
-    const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= totalPages) {
-            setCurrentPage(newPage);
-        }
-    };
-
-    return (
-        <div className="data-table-container">
-            {title && <h3 style={{ marginBottom: '10px', color: '#2c3e50' }}>{title}</h3>}
-            
-            <table style={tableStyles}>
-                <thead>
-                    <tr>
-                        {columns.map((col, index) => (
-                            <th key={index} style={headerStyles}>
-                                {col.header}
-                            </th>
-                        ))}
-                        {/* Column for actions (View, Edit, Delete) */}
-                        {actions && actions.length > 0 && <th style={headerStyles}>Actions</th>}
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentData.length === 0 ? (
-                        <tr>
-                            <td colSpan={columns.length + (actions ? 1 : 0)} style={{ ...cellStyles, textAlign: 'center' }}>
-                                No data available.
-                            </td>
-                        </tr>
+          <tbody className="divide-y">
+            {currentData.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-blue-50">
+                {columns.map((col, colIndex) => (
+                  <td key={colIndex} className="px-4 py-3">
+                    {col.accessor === "Status" ? (
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          row.Status === "Cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {row.Status}
+                      </span>
                     ) : (
-                        currentData.map((row, rowIndex) => (
-                            <tr 
-                                key={startIndex + rowIndex} 
-                                style={{ ...rowStyles, backgroundColor: (startIndex + rowIndex) % 2 === 0 ? '#f9f9f9' : 'white' }}
-                                onClick={onRowClick ? () => onRowClick(row) : null}
-                            >
-                                {columns.map((col, colIndex) => (
-                                    <td key={colIndex} style={cellStyles}>
-                                        {/* Display data using the accessor key */}
-                                        {row[col.accessor]}
-                                    </td>
-                                ))}
-
-                                {/* Actions Cell */}
-                                {actions && actions.length > 0 && (
-                                    <td style={cellStyles}>
-                                        {actions.map((action, actionIndex) => (
-                                            <button 
-                                                key={actionIndex} 
-                                                onClick={(e) => { 
-                                                    e.stopPropagation(); // Prevents row click when button is clicked
-                                                    action.handler(row); 
-                                                }}
-                                                style={{ ...action.style, padding: '5px 10px', marginRight: '5px' }}
-                                            >
-                                                {action.label}
-                                            </button>
-                                        ))}
-                                    </td>
-                                )}
-                            </tr>
-                        ))
+                      row[col.accessor]
                     )}
-                </tbody>
-            </table>
+                  </td>
+                ))}
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-                <div style={{ padding: '15px 0', textAlign: 'center' }}>
-                    <button 
-                        onClick={() => handlePageChange(currentPage - 1)} 
-                        disabled={currentPage === 1}
-                        style={{ padding: '8px 15px', margin: '0 5px' }}
-                    >
-                        Previous
-                    </button>
-                    <span>Page {currentPage} of {totalPages}</span>
-                    <button 
-                        onClick={() => handlePageChange(currentPage + 1)} 
-                        disabled={currentPage === totalPages}
-                        style={{ padding: '8px 15px', margin: '0 5px' }}
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
+                {actions?.length > 0 && (
+                  <td className="px-4 py-3">
+                    {row.Status === "Cancelled" ? (
+                      <span className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg text-xs font-semibold">
+                        Cancelled
+                      </span>
+                    ) : (
+                      actions.map((action, i) => (
+                        <button
+                          key={i}
+                          onClick={() => action.handler(row)}
+                          className="px-3 py-1 rounded-lg text-white text-xs font-semibold bg-red-500 hover:bg-red-600"
+                        >
+                          {action.label}
+                        </button>
+                      ))
+                    )}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-200"
+          >
+            Prev
+          </button>
+
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-200"
+          >
+            Next
+          </button>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default DataTable;

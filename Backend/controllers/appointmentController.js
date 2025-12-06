@@ -50,22 +50,22 @@ export const createAppointment = async (req, res) => {
 // ===================================
 export const getAllAppointments = async (req, res) => {
   try {
-    const [appointments] = await db.query(
-      `SELECT 
-        A.Appointment_ID, 
-        A.Date, 
-        A.Time, 
-        A.Reason,
-        P.Name AS Patient_Name, 
-        P.Patient_ID,
-        E.Name AS Doctor_Name, 
-        E.Employee_ID
-      FROM Appointment A
-      JOIN Patient P ON A.Patient_ID = P.Patient_ID
-      JOIN Employee E ON A.Employee_ID = E.Employee_ID
-      ORDER BY A.Date DESC, A.Time ASC`
-    );
-
+    const [appointments] = await db.query(`
+  SELECT 
+    A.Appointment_ID, 
+    A.Date, 
+    A.Time, 
+    A.Reason,
+    A.Status,
+    P.Name AS Patient_Name, 
+    P.Patient_ID,
+    E.Name AS Doctor_Name, 
+    E.Employee_ID
+  FROM Appointment A
+  JOIN Patient P ON A.Patient_ID = P.Patient_ID
+  JOIN Employee E ON A.Employee_ID = E.Employee_ID
+  ORDER BY A.Date DESC, A.Time ASC
+`);
     res.status(200).json(appointments);
   } catch (error) {
     console.error('Error fetching all appointments:', error);
@@ -206,5 +206,27 @@ export const deleteAppointment = async (req, res) => {
     res
       .status(500)
       .json({ message: 'Server error while cancelling appointment.' });
+  }
+};
+
+// ✅✅✅ CANCEL APPOINTMENT (STATUS ONLY, NOT DELETE)
+// ===================================
+export const cancelAppointment = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.query(
+      `UPDATE Appointment SET Status = 'Cancelled' WHERE Appointment_ID = ?`,
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Appointment not found.' });
+    }
+
+    res.status(200).json({ message: 'Appointment cancelled successfully.' });
+  } catch (error) {
+    console.error('Cancel appointment error:', error);
+    res.status(500).json({ message: 'Server error while cancelling appointment.' });
   }
 };
