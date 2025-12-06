@@ -1,3 +1,4 @@
+// src/pages/EmployeeManagerPage.jsx
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import EmployeeForm from '../components/forms/EmployeeForm';
@@ -52,38 +53,66 @@ const EmployeeManagerPage = () => {
     {
       label: 'Edit',
       handler: handleAddOrEdit,
-      style: { background: '#f39c12', color: 'white', border: 'none', borderRadius: '4px' }
+      style: {
+        background: '#f39c12', // Orange
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+      },
     },
     {
       label: 'Delete',
       handler: handleDelete,
-      style: { background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px' }
-    }
+      style: {
+        background: '#e74c3c', // Red
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+      },
+    },
   ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-purple-700 mb-4">Employee Management</h1>
-      <button
-        onClick={() => handleAddOrEdit(null)}
-        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl mb-6 transition duration-300"
-      >
-        + Add New Employee
-      </button>
+    <div className="p-6 sm:p-10 bg-[#f0f7ff] min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+        <h1 className="text-3xl sm:text-4xl font-bold text-[#6a1b9a] mb-4 sm:mb-0">
+          Employee Management
+        </h1>
+        <button
+          onClick={() => handleAddOrEdit(null)}
+          className="px-5 py-2 bg-[#2ecc71] hover:bg-[#27ae60] text-white rounded-2xl shadow-md transition duration-300"
+        >
+          + Add New Employee
+        </button>
+      </div>
 
-      <DataTable
-        title="Current Staff Roster"
-        columns={employeeColumns}
-        data={employees}
-        actions={employeeActions}
-      />
+      {/* Data Table */}
+      <div className="bg-white rounded-xl shadow-md overflow-auto">
+        <DataTable
+          title="Current Staff Roster"
+          columns={employeeColumns}
+          data={employees}
+          actions={employeeActions}
+        />
+      </div>
 
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md">
-            <h3 className="text-lg font-semibold border-b pb-2 mb-4">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg p-6 sm:p-8 shadow-lg relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold transition"
+            >
+              &times;
+            </button>
+
+            <h3 className="text-xl font-semibold border-b pb-2 mb-6 text-gray-800">
               {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
             </h3>
+
             <EmployeeForm
               employeeData={editingEmployee}
               onClose={() => {
