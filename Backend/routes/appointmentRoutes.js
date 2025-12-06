@@ -5,7 +5,7 @@ import * as appointmentController from '../controllers/appointmentController.js'
 
 const router = express.Router();
 
-// ✅ 1. Create Appointment (Receptionist)
+// Create Appointment (Receptionist)
 router.post(
   '/',
   protect,
@@ -13,15 +13,15 @@ router.post(
   appointmentController.createAppointment
 );
 
-// ✅ 2. Get All Appointments (NOW: Receptionist + Admin + Doctor ✅)
+// Get All Appointments (Admin + Receptionist + Doctor)
 router.get(
   '/',
   protect,
-  restrictTo('Receptionist', 'Admin', 'Doctor'), // ✅ FIXED HERE
+  restrictTo('Receptionist', 'Admin', 'Doctor'),
   appointmentController.getAllAppointments
 );
 
-// ✅ 3. Get Doctor Appointments (Doctor + Admin)
+// Get Doctor Appointments (Doctor + Admin)
 router.get(
   '/doctor/:id',
   protect,
@@ -29,7 +29,7 @@ router.get(
   appointmentController.getAppointmentsByDoctor
 );
 
-// ✅ 4. Update Appointment (Receptionist)
+// Update Appointment (Receptionist)
 router.put(
   '/:id',
   protect,
@@ -37,7 +37,7 @@ router.put(
   appointmentController.updateAppointment
 );
 
-// ✅ 5. Delete / Cancel Appointment (Receptionist)
+// Delete / Cancel Appointment (Receptionist)
 router.delete(
   '/:id',
   protect,
@@ -49,7 +49,15 @@ router.put(
   '/cancel/:id',
   protect,
   restrictTo('Receptionist'),
-  appointmentController.cancelAppointment   // ✅ NEW CONTROLLER
+  appointmentController.cancelAppointment
+);
+
+// ✅ New route: Get total appointments (all time)
+router.get(
+  '/total',
+  protect,
+  restrictTo('Receptionist', 'Admin'),
+  appointmentController.getTotalAppointments
 );
 
 export default router;

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const DataTable = ({ columns, data, actions, title }) => {
+const DataTable = ({ columns, data, actions, title, deleteAction }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
@@ -12,26 +12,24 @@ const DataTable = ({ columns, data, actions, title }) => {
   return (
     <div className="w-full">
       {title && (
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-700 mb-4">
-          {title}
-        </h3>
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-700 mb-4">{title}</h3>
       )}
 
       {/* Desktop Table */}
       <div className="hidden sm:block overflow-x-auto rounded-xl border shadow-sm">
         <table className="min-w-full text-left border-collapse">
-          <thead className="bg-blue-600 text-white">
+          <thead className="bg-blue-700 text-white">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className="px-4 py-3 text-sm sm:text-base font-semibold uppercase tracking-wider"
+                  className="px-6 py-3 text-sm sm:text-base font-semibold uppercase tracking-wider text-left"
                 >
                   {col.header}
                 </th>
               ))}
               {actions?.length > 0 && (
-                <th className="px-4 py-3 text-sm sm:text-base font-semibold uppercase tracking-wider">
+                <th className="px-6 py-3 text-sm sm:text-base font-semibold uppercase tracking-wider text-left">
                   Actions
                 </th>
               )}
@@ -47,36 +45,31 @@ const DataTable = ({ columns, data, actions, title }) => {
                 {columns.map((col, colIndex) => (
                   <td
                     key={colIndex}
-                    className="px-4 py-3 text-sm sm:text-base text-gray-700"
+                    className="px-6 py-3 text-sm sm:text-base text-gray-700"
                   >
-                    {col.accessor === "Status" ? (
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
-                          row.Status === "Cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {row.Status || "Scheduled"}
-                      </span>
-                    ) : (
-                      row[col.accessor]
-                    )}
+                    {row[col.accessor]}
                   </td>
                 ))}
 
                 {actions?.length > 0 && (
-                  <td className="px-4 py-3 text-sm sm:text-base">
+                  <td className="px-6 py-3 text-sm sm:text-base flex flex-wrap gap-2">
                     {row.Status === "Cancelled" ? (
-                      <span className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg text-xs sm:text-sm font-semibold">
-                        Cancelled
-                      </span>
+                      <button
+                        onClick={() => deleteAction(row)}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200"
+                      >
+                        Delete
+                      </button>
                     ) : (
                       actions.map((action, i) => (
                         <button
                           key={i}
                           onClick={() => action.handler(row)}
-                          className="px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-white text-xs sm:text-sm font-semibold bg-red-500 hover:bg-red-600 transition-colors duration-200"
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+                            action.label === "Remove"
+                              ? "bg-red-600 hover:bg-red-700 text-white"
+                              : "bg-blue-600 hover:bg-blue-700 text-white"
+                          }`}
                         >
                           {action.label}
                         </button>
@@ -99,39 +92,30 @@ const DataTable = ({ columns, data, actions, title }) => {
           >
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="flex justify-between">
-                <span className="font-semibold text-gray-600 text-sm">
-                  {col.header}:
-                </span>
-                <span className="text-gray-800 text-sm">
-                  {col.accessor === "Status" ? (
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        row.Status === "Cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {row.Status || "Scheduled"}
-                    </span>
-                  ) : (
-                    row[col.accessor]
-                  )}
-                </span>
+                <span className="font-semibold text-gray-600 text-sm">{col.header}:</span>
+                <span className="text-gray-800 text-sm">{row[col.accessor]}</span>
               </div>
             ))}
 
             {actions?.length > 0 && (
               <div className="pt-2 flex flex-wrap gap-2">
                 {row.Status === "Cancelled" ? (
-                  <span className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg text-xs font-semibold">
-                    Cancelled
-                  </span>
+                  <button
+                    onClick={() => deleteAction(row)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200 w-full"
+                  >
+                    Delete
+                  </button>
                 ) : (
                   actions.map((action, i) => (
                     <button
                       key={i}
                       onClick={() => action.handler(row)}
-                      className="px-3 py-1 rounded-lg text-white text-xs font-semibold bg-red-500 hover:bg-red-600 transition-colors duration-200"
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 w-full ${
+                        action.label === "Remove"
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
                     >
                       {action.label}
                     </button>
@@ -143,13 +127,13 @@ const DataTable = ({ columns, data, actions, title }) => {
         ))}
       </div>
 
-      {/* PAGINATION */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-4">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition"
+            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >
             Previous
           </button>
@@ -161,7 +145,7 @@ const DataTable = ({ columns, data, actions, title }) => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition"
+            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >
             Next
           </button>

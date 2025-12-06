@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import DataTable from '../components/DataTable';
-import API from '../api/config'; // Backend API
+import API from '../api/config';
 
 const ReceptionistDashboard = () => {
   const navigate = useNavigate();
@@ -11,23 +11,28 @@ const ReceptionistDashboard = () => {
 
   // Dashboard stats
   const [stats, setStats] = useState({
-    appointmentsToday: 0,
+    totalAppointments: 0,
     patientsCheckedIn: 0,
     availableRooms: 0,
+    totalRooms: 0,
     pendingBills: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Fetch receptionist stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await API.get('/dashboard/receptionist');
+        const [appointmentsRes, dashboardRes] = await Promise.all([
+          API.get('/appointments/total'),
+          API.get('/dashboard/receptionist')
+        ]);
+
         setStats({
-          appointmentsToday: res.data.totalAppointmentsToday || 0,
-          patientsCheckedIn: res.data.patientsCheckedIn || 0,
-          availableRooms: res.data.availableRooms || 0,
-          pendingBills: res.data.pendingBills || 0,
+          totalAppointments: appointmentsRes.data.totalAppointments || 0,
+          patientsCheckedIn: dashboardRes.data.patientsCheckedIn || 0,
+          availableRooms: dashboardRes.data.availableRooms || 0,
+          totalRooms: dashboardRes.data.totalRooms || 0,
+          pendingBills: dashboardRes.data.pendingBills || 0,
         });
       } catch (err) {
         console.error('Failed to fetch dashboard stats:', err);
@@ -38,7 +43,7 @@ const ReceptionistDashboard = () => {
     fetchStats();
   }, []);
 
-  // Fetch today's appointments
+  // Fetch today's appointments for table
   const [appointments, setAppointments] = useState([]);
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -74,21 +79,54 @@ const ReceptionistDashboard = () => {
     },
   ];
 
+  // Room progress bar
+  const RoomProgress = () => {
+    const occupied = stats.totalRooms - stats.availableRooms;
+    const percentage = stats.totalRooms ? Math.round((occupied / stats.totalRooms) * 100) : 0;
+    return (
+      <div className="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div
+          className="h-2 bg-yellow-500 rounded-full"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">
         Hello, {user?.name || 'Receptionist'}!
       </h2>
-      <p className="text-gray-600 mb-6">
-        Your operational dashboard for patient management and scheduling.
-      </p>
+      <p className="text-gray-600 mb-6">Your operational dashboard for patient management and scheduling.</p>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Appointments Today" value={loadingStats ? '...' : stats.appointmentsToday} icon="🗓️" color="blue" />
-        <StatCard title="Patients Checked-In" value={loadingStats ? '...' : stats.patientsCheckedIn} icon="✅" color="green" />
-        <StatCard title="Available Rooms" value={loadingStats ? '...' : stats.availableRooms} icon="🛌" color="yellow" />
-        <StatCard title="Pending Bills" value={loadingStats ? '...' : stats.pendingBills} icon="💳" color="red" />
+        <StatCard
+          title="Total Appointments"
+          value={loadingStats ? '...' : stats.totalAppointments}
+          icon="📅"
+          color="blue"
+        />
+        <StatCard
+          title="Patients Checked-In"
+          value={loadingStats ? '...' : stats.patientsCheckedIn}
+          icon="✅"
+          color="green"
+        />
+        <StatCard
+          title={`Available Rooms (${stats.availableRooms}/${stats.totalRooms})`}
+          value={loadingStats ? '...' : stats.availableRooms}
+          icon="🛌"
+          color="yellow"
+          extra={<RoomProgress />}
+        />
+        <StatCard
+          title="Pending Bills"
+          value={loadingStats ? '...' : stats.pendingBills}
+          icon="💳"
+          color="red"
+        />
       </div>
 
       {/* Quick Action Buttons */}
@@ -96,7 +134,6 @@ const ReceptionistDashboard = () => {
         <QuickActionButton label="Register Patient" icon="➕" onClick={() => navigate('/patients/new')} />
         <QuickActionButton label="Book Appointment" icon="🗓️" onClick={() => navigate('/appointments/new')} />
         <QuickActionButton label="Generate Bill" icon="💳" onClick={() => navigate('/receptionist/bills')} />
-        <QuickActionButton label="Manage Rooms" icon="🛌" onClick={() => navigate('/receptionist/rooms')} />
       </div>
 
       {/* Today's Appointments Table */}
@@ -113,7 +150,6 @@ const ReceptionistDashboard = () => {
   );
 };
 
-// Quick Action Button Component
 const QuickActionButton = ({ label, icon, onClick }) => (
   <button
     onClick={onClick}

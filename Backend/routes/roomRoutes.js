@@ -5,36 +5,25 @@ import * as roomController from '../controllers/roomController.js';
 
 const router = express.Router();
 
-// 1. Get All Rooms and Current Status (Used by Room Manager Page)
-router.get(
-    '/',
-    protect,
-    restrictTo('Receptionist', 'Admin'),
-    roomController.getAllRooms
-);
+// Get all rooms
+router.get('/', protect, restrictTo('Receptionist', 'Admin'), roomController.getAllRooms);
 
-// 2. Assign a Patient to a Room (Admission)
-router.post(
-    '/assign',
-    protect,
-    restrictTo('Receptionist'),
-    roomController.createRoomAssignment
-);
+// Assign a patient to a room
+router.post('/assign', protect, restrictTo('Receptionist'), roomController.createRoomAssignment);
 
-// 3. Discharge a Patient from a Room (Completes the assignment)
-router.put(
-    '/discharge/:roomId',
-    protect,
-    restrictTo('Receptionist'),
-    roomController.dischargePatient
-);
+// Discharge a patient from a room
+router.put('/discharge/:roomId', protect, restrictTo('Receptionist'), roomController.dischargePatient);
 
-// 4. Update a Room's permanent status (e.g., set to Maintenance)
-router.put(
-    '/:roomId/status',
-    protect,
-    restrictTo('Admin'),
-    roomController.updateRoomStatus
-);
+// Update room status (Available / Occupied / Maintenance)
+router.put('/:roomId/status', protect, restrictTo('Admin'), roomController.updateRoomStatus);
 
-export default router;  
+// Add new room
+router.post('/', protect, restrictTo('Admin'), roomController.createRoom);
+
+// Update room info (edit Room_Type or Status)
+router.put('/:roomId', protect, restrictTo('Admin'), roomController.updateRoom);
+
+// Delete room
+router.delete('/:roomId', protect, restrictTo('Admin'), roomController.deleteRoom);
+
+export default router;

@@ -49,47 +49,56 @@ export const getAdminDashboardStats = async (req, res) => {
 // ============================
 // ✅ RECEPTIONIST DASHBOARD STATS
 // ============================
+// controllers/dashboardController.js
+
+
 export const getReceptionistDashboardStats = async (req, res) => {
   try {
-    // Total appointments today
+    // Total appointments today (considering only 'Scheduled' or 'Confirmed')
     const [appointmentsToday] = await db.query(
-      `SELECT COUNT(*) AS totalAppointments 
-       FROM Appointment 
-       WHERE DATE(Date) = CURDATE()`
+      `SELECT COUNT(*) AS totalAppointments
+       FROM Appointment
+       WHERE DATE(Date) = CURDATE()
+       AND Status IN ('Scheduled','Confirmed')`
     );
 
-    // Patients currently checked in
+    // Patients currently checked in (Room_Assignment where discharge date is null)
     const [patientsCheckedIn] = await db.query(
       `SELECT COUNT(*) AS total
        FROM Room_Assignment
        WHERE Discharge_Date IS NULL`
     );
 
-    // Available rooms
-    const [availableRooms] = await db.query(
-      `SELECT COUNT(*) AS availableRooms 
-       FROM Room 
-       WHERE Status = 'Available'`
+    // Total rooms and currently occupied rooms (Status = 'Occupied')
+    const [roomsTotal] = await db.query(
+      `SELECT COUNT(*) AS totalRooms FROM Room`
     );
+
+    const [roomsOccupied] = await db.query(
+      `SELECT COUNT(*) AS occupiedRooms FROM Room WHERE Status = 'Occupied'`
+    );
+
+    const availableRooms = roomsTotal[0].totalRooms - roomsOccupied[0].occupiedRooms;
 
     // Pending bills
     const [pendingBills] = await db.query(
-      `SELECT COUNT(*) AS totalPending
-       FROM Bill
-       WHERE Status = 'Pending'`
+      `SELECT COUNT(*) AS totalPending FROM Bill WHERE Status = 'Pending'`
     );
 
     res.status(200).json({
       totalAppointmentsToday: appointmentsToday[0].totalAppointments,
       patientsCheckedIn: patientsCheckedIn[0].total,
-      availableRooms: availableRooms[0].availableRooms,
+      availableRooms,
       pendingBills: pendingBills[0].totalPending,
+      totalRooms: roomsTotal[0].totalRooms,
+      occupiedRooms: roomsOccupied[0].occupiedRooms,
     });
   } catch (error) {
     console.error('Error fetching receptionist dashboard stats:', error);
     res.status(500).json({ message: 'Server error fetching receptionist dashboard stats' });
   }
 };
+
 
 // ============================
 // ✅ DOCTOR DASHBOARD STATS

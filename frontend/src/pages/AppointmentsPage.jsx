@@ -1,3 +1,4 @@
+// src/pages/AppointmentsPage.jsx
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
 import AppointmentForm from "../components/forms/AppointmentForm";
@@ -13,12 +14,11 @@ const AppointmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Fetch appointments from backend
   const fetchAppointments = async () => {
     try {
       const response = await API.get("/appointments", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setAppointments(response.data || []);
     } catch (error) {
@@ -32,12 +32,11 @@ const AppointmentsPage = () => {
     fetchAppointments();
   }, []);
 
-  // ✅✅✅ CANCEL + INSTANT UI UPDATE
+  // Cancel appointment
   const handleCancel = async (appointmentId) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this appointment?"
     );
-
     if (!confirmCancel) return;
 
     try {
@@ -47,13 +46,11 @@ const AppointmentsPage = () => {
         `/appointments/cancel/${appointmentId}`,
         {},
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
 
-      // ✅✅✅ INSTANT UI CHANGE
+      // Instant UI update
       setAppointments((prev) =>
         prev.map((appt) =>
           appt.Appointment_ID === appointmentId
@@ -71,6 +68,36 @@ const AppointmentsPage = () => {
     }
   };
 
+  // Delete cancelled appointment
+  const handleDelete = async (row) => {
+    const appointmentId = row.Appointment_ID;
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this cancelled appointment?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      setActionLoading(true);
+
+      await API.delete(`/appointments/${appointmentId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      // Remove from UI instantly
+      setAppointments((prev) =>
+        prev.filter((appt) => appt.Appointment_ID !== appointmentId)
+      );
+
+      alert("Appointment deleted ✅");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Delete failed ❌");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Columns for DataTable
   const appointmentColumns = [
     { header: "ID", accessor: "Appointment_ID" },
     { header: "Date", accessor: "Date" },
@@ -78,9 +105,10 @@ const AppointmentsPage = () => {
     { header: "Patient", accessor: "Patient_Name" },
     { header: "Doctor", accessor: "Doctor_Name" },
     { header: "Reason", accessor: "Reason" },
-    { header: "Status", accessor: "Status" }, // ✅ STATUS COLUMN
+    { header: "Status", accessor: "Status" },
   ];
 
+  // Actions for DataTable
   const appointmentActions = [
     {
       label: "Cancel",
@@ -98,9 +126,8 @@ const AppointmentsPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-3 sm:p-6">
-
       {/* HEADER */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4 flex justify-between items-center">
+      <div className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-blue-700">
             Appointment Manager
@@ -113,9 +140,9 @@ const AppointmentsPage = () => {
         {isReceptionist && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold w-full sm:w-auto"
           >
-            + Book Appointment
+          Book Appointment
           </button>
         )}
       </div>
@@ -127,8 +154,24 @@ const AppointmentsPage = () => {
           columns={appointmentColumns}
           data={appointments}
           actions={appointmentActions}
+          deleteAction={handleDelete} // Pass delete handler for cancelled rows
         />
       </div>
+
+      {/* APPOINTMENT FORM MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 relative">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 font-bold text-xl"
+            >
+              &times;
+            </button>
+            <AppointmentForm />
+          </div>
+        </div>
+      )}
 
       {/* LOADING OVERLAY */}
       {actionLoading && (

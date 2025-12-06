@@ -8,22 +8,32 @@ import API from '../api/config';
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [stats, setStats] = useState({
     totalEmployees: 0,
     totalRoles: 0,
+    totalAppointments: 0,
+    totalPatients: 0,
     roomOccupancy: '0%'
   });
+
   const [loading, setLoading] = useState(true);
 
-  // Fetch dashboard stats from backend
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await API.get('/dashboard/admin');
+        const [dashboardRes, appointmentsRes, patientsRes] = await Promise.all([
+          API.get('/dashboard/admin'),
+          API.get('/appointments/total'),
+          API.get('/patients/total')
+        ]);
+
         setStats({
-          totalEmployees: response.data.totalEmployees,
-          totalRoles: response.data.totalRoles,
-          roomOccupancy: response.data.roomOccupancy
+          totalEmployees: dashboardRes.data.totalEmployees,
+          totalRoles: dashboardRes.data.totalRoles,
+          roomOccupancy: dashboardRes.data.roomOccupancy,
+          totalAppointments: appointmentsRes.data.totalAppointments || 0,
+          totalPatients: patientsRes.data.totalPatients || 0
         });
       } catch (error) {
         console.error('Failed to fetch admin stats:', error);
@@ -41,6 +51,8 @@ const AdminDashboard = () => {
   const statCards = [
     { title: 'Total Employees', value: stats.totalEmployees, icon: '👥', color: 'blue' },
     { title: 'System Roles Defined', value: stats.totalRoles, icon: '🔑', color: 'blue' },
+    { title: 'Total Appointments', value: stats.totalAppointments, icon: '📅', color: 'yellow' },
+    { title: 'Total Patients', value: stats.totalPatients, icon: '🧑‍⚕️', color: 'green' },
     { title: 'Current Room Occupancy', value: stats.roomOccupancy, icon: '🏥', color: 'green' },
   ];
 
@@ -57,7 +69,7 @@ const AdminDashboard = () => {
       </header>
 
       {/* Stat Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         {loading ? (
           <p>Loading stats...</p>
         ) : (
