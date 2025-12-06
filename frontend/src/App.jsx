@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
@@ -18,33 +18,21 @@ import NewAppointment from './pages/NewAppointment';
 import EmployeeManagerPage from './pages/EmployeeManagerPage';
 import BillingManagerPage from './pages/BillingManagerPage';
 import RoomManagerPage from './pages/RoomManagerPage';
-
-// New Admin Pages
 import RolesPage from './pages/RolesPage';
 import LogsPage from './pages/LogsPage';
 
 const App = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const publicRoutes = ['/login', '/home'];
   const showSidebar = user && !publicRoutes.includes(location.pathname);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {showSidebar && <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+      {showSidebar && <Sidebar />}
 
-      <main className={`flex-1 transition-all p-4 sm:p-6 ${showSidebar ? 'md:ml-64' : 'ml-0'}`}>
-        {showSidebar && (
-          <button
-            className="md:hidden mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? 'Close Menu' : 'Open Menu'}
-          </button>
-        )}
-
+      <main className={`flex-1 transition-all p-4 sm:p-6 md:ml-64`}>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -69,8 +57,8 @@ const App = () => {
             <Route path="/patients/new" element={<NewPatient />} />
             <Route path="/patients/:id" element={<PatientProfile />} />
             <Route path="/appointments/new" element={<NewAppointment />} />
-            <Route path="/receptionist/bills" element={<BillingManagerPage />} /> {/* updated */}
-            <Route path="/receptionist/rooms" element={<RoomManagerPage />} />    {/* updated */}
+            <Route path="/receptionist/bills" element={<BillingManagerPage />} />
+            <Route path="/receptionist/rooms" element={<RoomManagerPage />} />
           </Route>
 
           {/* Shared Staff Routes */}
@@ -94,7 +82,6 @@ const App = () => {
                 : <HomePage />
             }
           />
-
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

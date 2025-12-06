@@ -16,15 +16,13 @@ const ReceptionistDashboard = () => {
     availableRooms: 0,
     pendingBills: 0,
   });
-
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Fetch real receptionist dashboard stats
+  // Fetch receptionist stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await API.get('/dashboard/receptionist');
-        // Map backend response to local state
         setStats({
           appointmentsToday: res.data.totalAppointmentsToday || 0,
           patientsCheckedIn: res.data.patientsCheckedIn || 0,
@@ -37,17 +35,15 @@ const ReceptionistDashboard = () => {
         setLoadingStats(false);
       }
     };
-
     fetchStats();
   }, []);
 
-  // Fetch today's appointments (optional, dynamic from backend)
+  // Fetch today's appointments
   const [appointments, setAppointments] = useState([]);
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const res = await API.get('/appointments'); // Fetch all appointments
-        // Filter for today's date
+        const res = await API.get('/appointments');
         const today = new Date().toISOString().split('T')[0];
         const todaysAppointments = res.data.filter(a => a.Date === today);
         setAppointments(todaysAppointments);
@@ -79,7 +75,7 @@ const ReceptionistDashboard = () => {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 md:p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">
         Hello, {user?.name || 'Receptionist'}!
       </h2>
@@ -89,34 +85,14 @@ const ReceptionistDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Appointments Today"
-          value={loadingStats ? '...' : stats.appointmentsToday}
-          icon="🗓️"
-          color="blue"
-        />
-        <StatCard
-          title="Patients Checked-In"
-          value={loadingStats ? '...' : stats.patientsCheckedIn}
-          icon="✅"
-          color="green"
-        />
-        <StatCard
-          title="Available Rooms"
-          value={loadingStats ? '...' : stats.availableRooms}
-          icon="🛌"
-          color="yellow"
-        />
-        <StatCard
-          title="Pending Bills"
-          value={loadingStats ? '...' : stats.pendingBills}
-          icon="💳"
-          color="red"
-        />
+        <StatCard title="Appointments Today" value={loadingStats ? '...' : stats.appointmentsToday} icon="🗓️" color="blue" />
+        <StatCard title="Patients Checked-In" value={loadingStats ? '...' : stats.patientsCheckedIn} icon="✅" color="green" />
+        <StatCard title="Available Rooms" value={loadingStats ? '...' : stats.availableRooms} icon="🛌" color="yellow" />
+        <StatCard title="Pending Bills" value={loadingStats ? '...' : stats.pendingBills} icon="💳" color="red" />
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <QuickActionButton label="Register Patient" icon="➕" onClick={() => navigate('/patients/new')} />
         <QuickActionButton label="Book Appointment" icon="🗓️" onClick={() => navigate('/appointments/new')} />
         <QuickActionButton label="Generate Bill" icon="💳" onClick={() => navigate('/receptionist/bills')} />
@@ -124,7 +100,7 @@ const ReceptionistDashboard = () => {
       </div>
 
       {/* Today's Appointments Table */}
-      <div>
+      <div className="overflow-x-auto">
         <h3 className="text-xl font-semibold mb-2">Today's Clinic Agenda</h3>
         <DataTable
           title="Appointments Requiring Action"

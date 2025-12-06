@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext';
 
 const navLinks = [
-  // Admin
   { name: 'Dashboard', path: '/', icon: '🏠', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { name: 'Employee Manager', path: '/employees', icon: '🧑‍💼', roles: ['Admin'] },
-  
-  // Doctor
   { name: 'Appointments', path: '/appointments', icon: '📅', roles: ['Doctor', 'Receptionist'] },
   { name: 'Patient Manager', path: '/patients', icon: '👤', roles: ['Doctor', 'Receptionist'] },
-
-  // Receptionist
-  { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] }, // updated
-  { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist'] },   // updated
+  { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] },
+  { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist'] },
 ];
 
 const Sidebar = () => {
@@ -22,8 +17,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!user || location.pathname === '/login') return null;
-
-  const userRole = user.role;
+  const userRole = user?.role;
 
   return (
     <>
@@ -38,9 +32,10 @@ const Sidebar = () => {
       </div>
 
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-screen bg-[#1e3a8a] text-white flex flex-col shadow-lg
-        ${isOpen ? 'w-64' : 'w-0 overflow-hidden'} 
-        md:w-64 transition-all duration-300 ease-in-out`}
+      <div
+        className={`fixed top-0 left-0 h-screen bg-[#1e3a8a] text-white flex flex-col shadow-lg
+        w-64 md:w-64 transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 z-40`}
       >
         <div className="text-center py-6 font-bold text-2xl border-b border-[#3498db]">
           EasyCare HMS
@@ -59,7 +54,7 @@ const Sidebar = () => {
                 to={link.path}
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 m-2 rounded-lg font-medium transition-colors
-                  ${isActive ? 'bg-[#3498db] text-white' : 'hover:bg-[#2c5282] hover:text-white'}` 
+                  ${isActive ? 'bg-[#3498db] text-white' : 'hover:bg-[#2c5282] hover:text-white'}`
                 }
                 onClick={() => setIsOpen(false)}
               >
@@ -79,10 +74,11 @@ const Sidebar = () => {
         </div>
       </div>
 
+      {/* Overlay for mobile */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black opacity-50 z-30 md:hidden"
         />
       )}
     </>
