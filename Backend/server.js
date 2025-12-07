@@ -1,3 +1,5 @@
+// server.js
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -31,7 +33,9 @@ app.get('/', (req, res) => {
     res.send('EasyCare Hospital System API is running.');
 });
 
-// API Routes
+// 🚀 API Routes
+// Note: Mounting all specific routes under /api/v1/resourceName 
+// and mounting the dashboard routes at the base /api/v1.
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
@@ -40,8 +44,12 @@ app.use('/api/v1/bills', billRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes); 
 app.use('/api/v1/roles', roleRoutes);
+
+// 🟢 CRITICAL FIX: Mounting dashboardRoutes at the base '/api/v1' 
+// to match the frontend call to '/doctor'
+app.use('/api/v1', dashboardRoutes); 
+
 
 // Start Server
 app.listen(PORT, () => {

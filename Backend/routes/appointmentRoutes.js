@@ -48,7 +48,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  restrictTo("Receptionist", "Admin"),
+  restrictTo("Receptionist", "Admin" , 'Doctor'),
   appointmentController.deleteAppointment
 );
 

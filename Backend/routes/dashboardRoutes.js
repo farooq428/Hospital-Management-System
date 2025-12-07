@@ -1,9 +1,12 @@
+// D:/WebProjects/Hospital-Management-System/Backend/routes/dashboardRoutes.js
+
 import express from 'express';
 import {
-  getAdminDashboardStats,
-  getReceptionistDashboardStats,
-  getDoctorDashboardStats,
-  getSystemLogs,
+    getAdminDashboardStats,
+    getReceptionistDashboardStats,
+    getDoctorDashboardStats,
+    getDoctorAppointments, // 🟢 CORRECTED: Now imported
+    getSystemLogs,
 } from '../controllers/dashboardController.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
@@ -20,9 +23,15 @@ router.get('/admin', protect, restrictTo('Admin'), getAdminDashboardStats);
 router.get('/receptionist', protect, restrictTo('Receptionist'), getReceptionistDashboardStats);
 
 // ============================
-// Doctor dashboard
+// Doctor dashboard (Stats)
 // ============================
+// Frontend calls: /api/v1/doctor
 router.get('/doctor', protect, restrictTo('Doctor'), getDoctorDashboardStats);
+
+// 🟢 DOCTOR APPOINTMENTS LIST
+// Frontend calls: /api/v1/appointments/doctor
+router.get('/appointments/doctor', protect, restrictTo('Doctor'), getDoctorAppointments);
+
 
 // ============================
 // System logs
