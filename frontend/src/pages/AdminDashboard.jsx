@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
 
-  // Fetch dashboard stats from backend
+  // Fetch dashboard stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -37,7 +37,6 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
@@ -59,6 +58,7 @@ const AdminDashboard = () => {
   const handleRoomAddOrEdit = (room = null) => {
     setEditingRoom(room);
     setIsRoomModalOpen(true);
+    fetchRooms();
   };
 
   const handleRoomDelete = async (roomId) => {
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
       try {
         await API.delete(`/rooms/${roomId}`);
         alert('Room deleted successfully');
-        fetchRooms();
+        setRooms((prevRooms) => prevRooms.filter(r => r.Room_ID !== roomId));
       } catch (err) {
         console.error(err);
         alert(err.response?.data?.message || 'Failed to delete room');
@@ -85,8 +85,6 @@ const AdminDashboard = () => {
         await API.post('/rooms', roomData);
         alert('Room added successfully');
       }
-      setIsRoomModalOpen(false);
-      fetchRooms();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to save room');
@@ -153,10 +151,7 @@ const AdminDashboard = () => {
           <QuickActionButton
             label="Manage Rooms"
             icon="🏠"
-            onClick={() => {
-              fetchRooms();
-              setIsRoomModalOpen(true);
-            }}
+            onClick={() => handleRoomAddOrEdit()}
             color="purple"
           />
         </div>
@@ -164,22 +159,25 @@ const AdminDashboard = () => {
 
       {/* Room Management Modal */}
       {isRoomModalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-center items-start overflow-auto pt-10 px-2 bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6 shadow-lg relative">
+        <div className="fixed inset-0 z-50 flex justify-center items-start overflow-auto pt-6 sm:pt-10 px-2 bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl w-full max-w-lg sm:max-w-2xl p-4 sm:p-6 shadow-lg relative">
             {/* Close button */}
             <button
-              onClick={() => setIsRoomModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold transition"
+              onClick={() => {
+                setIsRoomModalOpen(false);
+                setEditingRoom(null);
+              }}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold transition"
             >
               &times;
             </button>
 
-            <h3 className="text-xl font-semibold border-b pb-2 mb-6 text-gray-800">
+            <h3 className="text-xl font-semibold border-b pb-2 mb-4 text-gray-800">
               Room Management
             </h3>
 
             {/* Room List */}
-            <div className="space-y-4 max-h-[400px] overflow-auto mb-6">
+            <div className="space-y-4 max-h-[300px] overflow-auto mb-4">
               {rooms.map((room) => (
                 <div
                   key={room.Room_ID}
@@ -190,7 +188,7 @@ const AdminDashboard = () => {
                       <span className="font-semibold">ID:</span> {room.Room_ID}
                     </p>
                     <p>
-                      <span className="font-semibold">Name:</span> {room.Room_Name}
+                      <span className="font-semibold">Type:</span> {room.Room_Type}
                     </p>
                     <p>
                       <span className="font-semibold">Status:</span> {room.Status}
@@ -215,10 +213,24 @@ const AdminDashboard = () => {
             </div>
 
             {/* Add/Edit Room Form */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-3">
               <RoomForm
                 room={editingRoom}
-                onSave={saveRoom}
+                onSave={(payload) => {
+                  saveRoom(payload).then(() => {
+                    // Update rooms list immediately
+                    setRooms((prevRooms) => {
+                      const index = prevRooms.findIndex(r => r.Room_ID === payload.Room_ID);
+                      if (index !== -1) {
+                        const newRooms = [...prevRooms];
+                        newRooms[index] = payload;
+                        return newRooms;
+                      } else {
+                        return [...prevRooms, payload];
+                      }
+                    });
+                  });
+                }}
                 onCancel={() => {
                   setEditingRoom(null);
                   setIsRoomModalOpen(false);
@@ -256,7 +268,7 @@ const QuickActionButton = ({ label, icon, onClick, color }) => {
 const RoomForm = ({ room, onSave, onCancel }) => {
   const [roomData, setRoomData] = useState({
     Room_ID: room?.Room_ID || '',
-    Room_Name: room?.Room_Name || '',
+    Room_Type: room?.Room_Type || 'General',
     Status: room?.Status || 'Available',
   });
 
@@ -267,33 +279,51 @@ const RoomForm = ({ room, onSave, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!roomData.Room_ID || !roomData.Room_Name) {
-      alert('Room ID and Name are required');
+    if (!roomData.Room_ID || !roomData.Room_Type) {
+      alert('Room ID and Type are required');
       return;
     }
-    onSave(roomData);
+
+    const payload = {
+      Room_ID: Number(roomData.Room_ID),
+      Room_Type: roomData.Room_Type,
+      Status: roomData.Status,
+    };
+
+    onSave(payload);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex space-x-2">
+      <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
         <input
-          type="text"
+          type="number"
           name="Room_ID"
           placeholder="Room ID"
           value={roomData.Room_ID}
           onChange={handleChange}
           className="flex-1 p-2 border rounded"
-          disabled={!!room}
+          disabled={!!room} // cannot edit Room_ID
         />
-        <input
-          type="text"
-          name="Room_Name"
-          placeholder="Room Name"
-          value={roomData.Room_Name}
+        <select
+          name="Room_Type"
+          value={roomData.Room_Type}
           onChange={handleChange}
-          className="flex-2 p-2 border rounded flex-grow"
-        />
+          className="flex-1 p-2 border rounded"
+        >
+          <option value="General">General</option>
+          <option value="ICU">ICU</option>
+        </select>
+        <select
+          name="Status"
+          value={roomData.Status}
+          onChange={handleChange}
+          className="flex-1 p-2 border rounded"
+        >
+          <option value="Available">Available</option>
+          <option value="Occupied">Occupied</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
       </div>
       <div className="flex justify-end space-x-2">
         <button

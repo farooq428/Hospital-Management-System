@@ -77,20 +77,20 @@ const EmployeeManagerPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
         <h1 className="text-3xl sm:text-4xl font-bold text-[#6a1b9a] mb-4 sm:mb-0">
-          Employee Management
+          Current staff of EasyCare
         </h1>
         <button
           onClick={() => handleAddOrEdit(null)}
           className="px-5 py-2 bg-[#2ecc71] hover:bg-[#27ae60] text-white rounded-2xl shadow-md transition duration-300"
         >
-          + Add New Employee
+          Add New Employee
         </button>
       </div>
 
       {/* Data Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-auto">
+      <div className="bg-white rounded-xl shadow-md overflow-auto ">
         <DataTable
-          title="Current Staff Roster"
+          
           columns={employeeColumns}
           data={employees}
           actions={employeeActions}
@@ -104,7 +104,7 @@ const EmployeeManagerPage = () => {
             {/* Close Button */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold transition"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold transition pl-2"
             >
               &times;
             </button>
