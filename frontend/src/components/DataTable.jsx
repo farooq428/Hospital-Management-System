@@ -55,7 +55,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
                   <td className="px-6 py-3 text-sm sm:text-base flex flex-wrap gap-2">
                     {row.Status === "Cancelled" ? (
                       <button
-                        onClick={() => deleteAction(row)}
+                        onClick={() => deleteAction?.(row)}
                         className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200"
                       >
                         Delete
@@ -101,7 +101,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
               <div className="pt-2 flex flex-wrap gap-2">
                 {row.Status === "Cancelled" ? (
                   <button
-                    onClick={() => deleteAction(row)}
+                    onClick={() => deleteAction?.(row)}
                     className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200 w-full"
                   >
                     Delete
@@ -131,7 +131,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-4">
           <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >
@@ -143,7 +143,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
           </span>
 
           <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >

@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
@@ -22,72 +24,83 @@ import RolesPage from './pages/RolesPage';
 import LogsPage from './pages/LogsPage';
 
 const App = () => {
-  const { user } = useAuth();
-  const location = useLocation();
+    const { user } = useAuth();
+    const location = useLocation();
 
-  const publicRoutes = ['/login', '/home'];
-  const showSidebar = user && !publicRoutes.includes(location.pathname);
+    const publicRoutes = ['/login', '/home'];
+    const showSidebar = user && !publicRoutes.includes(location.pathname);
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      {showSidebar && <Sidebar />}
+    return (
+        <div className="flex min-h-screen bg-gray-100">
+            {showSidebar && <Sidebar />}
 
-      <main className={`flex-1 transition-all p-4 sm:p-6 md:ml-64`}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/home" element={<HomePage />} />
+            <main className={`flex-1 transition-all p-4 sm:p-6 md:ml-64`}>
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/home" element={<HomePage />} />
 
-          {/* Admin Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/employees" element={<EmployeeManagerPage />} />
-            <Route path="/roles" element={<RolesPage />} />
-            <Route path="/logs" element={<LogsPage />} />
-            <Route path="/receptionist/rooms" element={<RoomManagerPage />} />
-          </Route>
+                    {/* --- ADMIN ONLY Routes --- */}
+                    <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+                        <Route path="/admin" element={<AdminDashboard />} />
+                        <Route path="/employees" element={<EmployeeManagerPage />} />
+                        <Route path="/roles" element={<RolesPage />} />
+                        <Route path="/logs" element={<LogsPage />} />
+                        {/* Note: RoomManagerPage and PatientProfile moved to Shared Staff Routes */}
+                    </Route>
 
-          {/* Doctor Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['Doctor']} />}>
-            <Route path="/doctor" element={<DoctorDashboard />} />
-          </Route>
+                    {/* --- DOCTOR ONLY Routes --- */}
+                    <Route element={<ProtectedRoute allowedRoles={['Doctor']} />}>
+                        <Route path="/doctor" element={<DoctorDashboard />} />
+                        {/* Note: PatientProfile moved to Shared Staff Routes */}
+                    </Route>
 
-          {/* Receptionist Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['Receptionist']} />}>
-            <Route path="/receptionist" element={<ReceptionistDashboard />} />
-            <Route path="/patients/new" element={<NewPatient />} />
-            <Route path="/patients/:id" element={<PatientProfile />} />
-            <Route path="/appointments/new" element={<NewAppointment />} />
-            <Route path="/receptionist/bills" element={<BillingManagerPage />} />
-            <Route path="/receptionist/rooms" element={<RoomManagerPage />} />
-          </Route>
+                    {/* --- RECEPTIONIST ONLY Routes --- */}
+                    <Route element={<ProtectedRoute allowedRoles={['Receptionist']} />}>
+                        <Route path="/receptionist" element={<ReceptionistDashboard />} />
+                        <Route path="/patients/new" element={<NewPatient />} />
+                        <Route path="/appointments/new" element={<NewAppointment />} />
+                        <Route path="/receptionist/bills" element={<BillingManagerPage />} />
+                        {/* Note: RoomManagerPage and PatientProfile moved to Shared Staff Routes */}
+                    </Route>
 
-          {/* Shared Staff Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['Admin', 'Doctor', 'Receptionist']} />}>
-            <Route path="/patients" element={<PatientManagerPage />} />
-            <Route path="/appointments" element={<AppointmentsPage />} />
-          </Route>
+                    {/* 🚀 SHARED STAFF Routes (Admin, Doctor, Receptionist) 🚀 */}
+                    {/* Routes accessed by all three employee types */}
+                    <Route element={<ProtectedRoute allowedRoles={['Admin', 'Doctor', 'Receptionist']} />}>
+                        
+                        {/* Patient Management */}
+                        <Route path="/patients" element={<PatientManagerPage />} />
+                        <Route path="/patients/:id" element={<PatientProfile />} /> 
+                        
+                        {/* Appointments */}
+                        <Route path="/appointments" element={<AppointmentsPage />} />
+                        
+                        {/* Rooms (Used by Admin and Receptionist/Front Desk) */}
+                        {/* Note: The old /receptionist/rooms paths still work via routing fallthrough */}
+                        <Route path="/rooms" element={<RoomManagerPage />} /> 
 
-          {/* Default Redirect */}
-          <Route
-            path="/"
-            element={
-              user
-                ? user.role === 'Admin'
-                  ? <Navigate to="/admin" replace />
-                  : user.role === 'Doctor'
-                    ? <Navigate to="/doctor" replace />
-                    : user.role === 'Receptionist'
-                      ? <Navigate to="/receptionist" replace />
-                      : <HomePage />
-                : <HomePage />
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-    </div>
-  );
+                    </Route>
+
+                    {/* --- Default Redirect --- */}
+                    <Route
+                        path="/"
+                        element={
+                            user
+                                ? user.role === 'Admin'
+                                    ? <Navigate to="/admin" replace />
+                                    : user.role === 'Doctor'
+                                        ? <Navigate to="/doctor" replace />
+                                        : user.role === 'Receptionist'
+                                            ? <Navigate to="/receptionist" replace />
+                                            : <HomePage />
+                                : <HomePage />
+                        }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </main>
+        </div>
+    );
 };
 
 export default App;

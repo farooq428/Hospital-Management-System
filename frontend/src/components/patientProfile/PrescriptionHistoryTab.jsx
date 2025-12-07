@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 const PrescriptionHistoryTab = ({ data }) => {
   return (
@@ -13,7 +13,7 @@ const PrescriptionHistoryTab = ({ data }) => {
         <ul className="list-disc pl-6">
           {data.map((p) => (
             <li key={p.Prescription_ID} className="mb-2">
-              {p.Date} - {p.Medicines_List} ({p.Dosage}, {p.Duration})  
+              {p.Date} - {p.Medicines_List} ({p.Dosage}, {p.Duration}){' '}
               <span className="ml-2 text-blue-600">
                 Doctor: {p.Doctor_Name || p.Employee_ID}
               </span>

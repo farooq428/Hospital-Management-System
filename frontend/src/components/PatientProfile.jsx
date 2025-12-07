@@ -1,26 +1,32 @@
-// src/components/PatientProfile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import API from '../api/config';
+import { useAuth } from '../context/AuthContext';
+import PrescriptionForm from './forms/PrescriptionForm';
+import PrescriptionHistoryTab from './PatientProfile/PrescriptionHistoryTab';
+import TestReportHistoryTab from './PatientProfile/TestReportHistoryTab';
 
 const PatientProfile = () => {
   const { id } = useParams();
+  const { user } = useAuth(); // get role and id
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
+  const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+
+  const fetchPatient = async () => {
+    try {
+      const res = await API.get(`/patients/${id}`);
+      setPatient(res.data);
+    } catch (err) {
+      console.error('Failed to fetch patient profile:', err);
+      alert('Could not load patient profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPatient = async () => {
-      try {
-        const res = await API.get(`/patients/${id}`);
-        setPatient(res.data);
-      } catch (err) {
-        console.error('Failed to fetch patient profile:', err);
-        alert('Could not load patient profile. Check ID or permissions.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPatient();
   }, [id]);
 
@@ -32,7 +38,7 @@ const PatientProfile = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-blue-600 mb-4">{patient.Name}'s Profile</h1>
-      
+
       {/* Tabs */}
       <div className="flex border-b border-gray-300 mb-4">
         {tabs.map(tab => (
@@ -59,20 +65,38 @@ const PatientProfile = () => {
             <p className="sm:col-span-2"><strong>Address:</strong> {patient.Address}</p>
           </div>
         )}
+
         {activeTab === 'prescriptions' && (
-          <ul className="list-disc pl-5">
-            {patient.prescriptions?.map(p => (
-              <li key={p.Prescription_ID}>{p.Medicines_List} ({p.Dosage}, {p.Duration})</li>
-            )) || <p>No prescriptions.</p>}
-          </ul>
+          <>
+            {user.role === 'doctor' && !showPrescriptionForm && (
+              <button
+                onClick={() => setShowPrescriptionForm(true)}
+                className="mb-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                ✍️ Issue New Prescription
+              </button>
+            )}
+
+            {showPrescriptionForm && user.role === 'doctor' && (
+              <PrescriptionForm
+                patientId={patient.Patient_ID}
+                doctorId={user.Employee_ID}
+                onSave={() => {
+                  setShowPrescriptionForm(false);
+                  fetchPatient();
+                }}
+                onClose={() => setShowPrescriptionForm(false)}
+              />
+            )}
+
+            <PrescriptionHistoryTab data={patient.prescriptions || []} />
+          </>
         )}
+
         {activeTab === 'reports' && (
-          <ul className="list-disc pl-5">
-            {patient.reports?.map(r => (
-              <li key={r.Report_ID}>{r.Type}: {r.Result}</li>
-            )) || <p>No test reports.</p>}
-          </ul>
+          <TestReportHistoryTab data={patient.reports || []} />
         )}
+
         {activeTab === 'billing' && (
           <ul className="list-disc pl-5">
             {patient.bills?.map(b => (

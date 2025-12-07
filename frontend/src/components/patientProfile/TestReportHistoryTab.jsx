@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 const TestReportHistoryTab = ({ data }) => {
   return (
@@ -16,7 +16,6 @@ const TestReportHistoryTab = ({ data }) => {
               <p><strong>Date:</strong> {r.Date}</p>
               <p><strong>Type:</strong> {r.Type}</p>
               <p><strong>Summary:</strong> {r.Result_Summary}</p>
-
               <a
                 href={`http://localhost:5000/api/v1/reports/${r.Report_ID}/download`}
                 target="_blank"
