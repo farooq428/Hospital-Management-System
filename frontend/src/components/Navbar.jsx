@@ -6,7 +6,7 @@ const navLinks = [
   { name: "Home", path: "/", roles: ["Admin", "Doctor", "Receptionist"] },
   { name: "Employee Management", path: "/employees", roles: ["Admin"] },
   { name: "Appointments", path: "/appointments", roles: ["Doctor", "Receptionist"] },
-  { name: "Bill Management", path: "/receptionist/bills", roles: ["Receptionist"] },
+  // { name: "Bill Management", path: "/receptionist/bills", roles: ["Receptionist"] },
   { name: "Room Management", path: "/rooms", roles: ["Receptionist"] },
   { name: "Patient Management", path: "/patients", roles: ["Receptionist"] },
 ];
@@ -81,7 +81,7 @@ const Navbar = () => {
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 transition text-white text-sm px-4 py-2 rounded-md font-semibold"
             >
-              Logout
+              Log Out
             </button>
 
             {/* ✅ Mobile Hamburger */}
