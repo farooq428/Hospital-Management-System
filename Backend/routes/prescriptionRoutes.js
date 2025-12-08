@@ -21,4 +21,13 @@ router.get(
     prescriptionController.getPrescriptionsByPatient
 );
 
+router.delete(
+    '/:id',
+    protect,
+    restrictTo('Doctor', 'Receptionist', 'Admin'), // Read access for multiple roles
+    prescriptionController.deletePrescription
+);
+
+
+
 export default router;

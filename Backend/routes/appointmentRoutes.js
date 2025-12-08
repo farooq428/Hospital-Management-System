@@ -60,4 +60,11 @@ router.get(
   appointmentController.getTotalAppointments
 );
 
+ router.put(
+  "/:id/status",
+  protect,
+  restrictTo("Receptionist", "Doctor"),
+  appointmentController.updateAppointmentStatus
+);
+
 export default router;

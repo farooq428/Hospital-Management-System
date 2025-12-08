@@ -9,6 +9,38 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
   const endIndex = startIndex + rowsPerPage;
   const currentData = data.slice(startIndex, endIndex);
 
+  // Helper to render buttons safely
+  const renderActions = (row) => {
+    if (row.Status === "Cancelled") {
+      return (
+        <button
+          onClick={() => deleteAction?.(row)}
+          className="px-4 py-2 min-w-[100px] rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200"
+        >
+          Delete
+        </button>
+      );
+    }
+
+    return actions
+      ?.filter((action) => !action.show || action.show(row))
+      .map((action, i) =>
+        action.handler ? (
+          <button
+            key={i}
+            onClick={() => action.handler(row)}
+            className={`px-3 sm:px-4 py-2 min-w-[90px] sm:min-w-[100px] rounded-lg text-sm font-semibold transition-colors duration-200 ${
+              action.label === "Remove"
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            {action.label}
+          </button>
+        ) : null
+      );
+  };
+
   return (
     <div className="w-full">
       {title && (
@@ -37,48 +69,40 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
           </thead>
 
           <tbody className="bg-white divide-y">
-            {currentData.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className="hover:bg-blue-50 transition-colors duration-200"
-              >
-                {columns.map((col, colIndex) => (
-                  <td
-                    key={colIndex}
-                    className="px-6 py-3 text-sm sm:text-base text-gray-700"
-                  >
-                    {row[col.accessor]}
-                  </td>
-                ))}
-
-                {actions?.length > 0 && (
-                  <td className="px-6 py-3 text-sm sm:text-base flex flex-wrap gap-2">
-                    {row.Status === "Cancelled" ? (
-                      <button
-                        onClick={() => deleteAction?.(row)}
-                        className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200"
-                      >
-                        Delete
-                      </button>
-                    ) : (
-                      actions.map((action, i) => (
-                        <button
-                          key={i}
-                          onClick={() => action.handler(row)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
-                            action.label === "Remove"
-                              ? "bg-red-600 hover:bg-red-700 text-white"
-                              : "bg-blue-600 hover:bg-blue-700 text-white"
-                          }`}
-                        >
-                          {action.label}
-                        </button>
-                      ))
-                    )}
-                  </td>
-                )}
+            {currentData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length + 1}
+                  className="text-center py-6 text-gray-500"
+                >
+                  No data available
+                </td>
               </tr>
-            ))}
+            ) : (
+              currentData.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className="hover:bg-blue-50 transition-colors duration-200"
+                >
+                  {columns.map((col, colIndex) => (
+                    <td
+                      key={colIndex}
+                      className="px-6 py-3 text-sm sm:text-base text-gray-700 whitespace-nowrap"
+                    >
+                      {col.Cell
+                        ? col.Cell({ value: row[col.accessor], row })
+                        : row[col.accessor]}
+                    </td>
+                  ))}
+
+                  {actions?.length > 0 && (
+                    <td className="px-6 py-3 text-sm sm:text-base flex flex-wrap gap-2">
+                      {renderActions(row)}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -93,34 +117,17 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="flex justify-between">
                 <span className="font-semibold text-gray-600 text-sm">{col.header}:</span>
-                <span className="text-gray-800 text-sm">{row[col.accessor]}</span>
+                <span className="text-gray-800 text-sm">
+                  {col.Cell
+                    ? col.Cell({ value: row[col.accessor], row })
+                    : row[col.accessor]}
+                </span>
               </div>
             ))}
 
             {actions?.length > 0 && (
               <div className="pt-2 flex flex-wrap gap-2">
-                {row.Status === "Cancelled" ? (
-                  <button
-                    onClick={() => deleteAction?.(row)}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors duration-200 w-full"
-                  >
-                    Delete
-                  </button>
-                ) : (
-                  actions.map((action, i) => (
-                    <button
-                      key={i}
-                      onClick={() => action.handler(row)}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 w-full ${
-                        action.label === "Remove"
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
-                      }`}
-                    >
-                      {action.label}
-                    </button>
-                  ))
-                )}
+                {renderActions(row)}
               </div>
             )}
           </div>
@@ -131,7 +138,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-4">
           <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >
@@ -143,7 +150,7 @@ const DataTable = ({ columns, data, actions, title, deleteAction }) => {
           </span>
 
           <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition w-full sm:w-auto"
           >

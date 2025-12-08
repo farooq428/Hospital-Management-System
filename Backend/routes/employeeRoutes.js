@@ -22,4 +22,8 @@ router.put('/:id', protect, restrictTo('Admin'), employeeController.updateEmploy
 // Delete Employee (Admin only)
 router.delete('/:id', protect, restrictTo('Admin'), employeeController.deleteEmployee);
 
+router.get('/:id', protect, restrictTo('Doctor'), employeeController.getEmployeeById);
+
+
+
 export default router;

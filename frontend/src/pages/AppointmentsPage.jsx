@@ -1,5 +1,5 @@
 // src/pages/AppointmentsPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import DataTable from "../components/DataTable";
 import AppointmentForm from "../components/forms/AppointmentForm";
 import { useAuth } from "../context/AuthContext";
@@ -14,7 +14,28 @@ const AppointmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Fetch appointments from backend
+  // ✅ Format date safely
+  const formatDateWithDay = (dateString) => {
+    if (!dateString) return "Invalid date";
+    const dateObj = new Date(dateString);
+    if (isNaN(dateObj.getTime())) return "Invalid date";
+    const day = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+    const date = dateObj.toLocaleDateString("en-CA"); // YYYY-MM-DD
+    return `${day}, ${date}`;
+  };
+
+  // ✅ Format time safely
+  const formatTimeOnly = (timeString) => {
+    if (!timeString) return "N/A";
+    try {
+      const timeObj = new Date(`1970-01-01T${timeString}`);
+      return timeObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  // Fetch appointments
   const fetchAppointments = async () => {
     try {
       const response = await API.get("/appointments", {
@@ -34,23 +55,15 @@ const AppointmentsPage = () => {
 
   // Cancel appointment
   const handleCancel = async (appointmentId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this appointment?"
-    );
+    const confirmCancel = window.confirm("Are you sure you want to cancel this appointment?");
     if (!confirmCancel) return;
 
     try {
       setActionLoading(true);
+      await API.put(`/appointments/cancel/${appointmentId}`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
 
-      await API.put(
-        `/appointments/cancel/${appointmentId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-
-      // Instant UI update
       setAppointments((prev) =>
         prev.map((appt) =>
           appt.Appointment_ID === appointmentId
@@ -78,16 +91,12 @@ const AppointmentsPage = () => {
 
     try {
       setActionLoading(true);
-
       await API.delete(`/appointments/${appointmentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-
-      // Remove from UI instantly
       setAppointments((prev) =>
         prev.filter((appt) => appt.Appointment_ID !== appointmentId)
       );
-
       alert("Appointment deleted ✅");
     } catch (error) {
       console.error("Delete error:", error);
@@ -97,23 +106,31 @@ const AppointmentsPage = () => {
     }
   };
 
-  // Columns for DataTable
+  // ✅ Format date and time for DataTable
+  const formattedAppointments = useMemo(
+    () =>
+      appointments.map((appt) => ({
+        ...appt,
+        formattedDate: formatDateWithDay(appt.Date),
+        formattedTime: formatTimeOnly(appt.Time),
+      })),
+    [appointments]
+  );
+
+  // Columns
   const appointmentColumns = [
     { header: "ID", accessor: "Appointment_ID" },
-    { header: "Date", accessor: "Date" },
-    { header: "Time", accessor: "Time" },
+    { header: "Date", accessor: "formattedDate" },
+    { header: "Time", accessor: "formattedTime" },
     { header: "Patient", accessor: "Patient_Name" },
     { header: "Doctor", accessor: "Doctor_Name" },
     { header: "Reason", accessor: "Reason" },
     { header: "Status", accessor: "Status" },
   ];
 
-  // Actions for DataTable
+  // Actions
   const appointmentActions = [
-    {
-      label: "Cancel",
-      handler: (row) => handleCancel(row.Appointment_ID),
-    },
+    { label: "Cancel", handler: (row) => handleCancel(row.Appointment_ID) },
   ];
 
   if (loading) {
@@ -129,12 +146,8 @@ const AppointmentsPage = () => {
       {/* HEADER */}
       <div className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-blue-700">
-            Appointment Manager
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage all scheduled appointments
-          </p>
+          <h1 className="text-3xl font-bold text-blue-700">Manage your appointments here!</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage all scheduled appointments</p>
         </div>
 
         {isReceptionist && (
@@ -142,7 +155,7 @@ const AppointmentsPage = () => {
             onClick={() => setIsModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold w-full sm:w-auto"
           >
-          Book Appointment
+            Book Appointment
           </button>
         )}
       </div>
@@ -152,9 +165,9 @@ const AppointmentsPage = () => {
         <DataTable
           title="All Scheduled Appointments"
           columns={appointmentColumns}
-          data={appointments}
+          data={formattedAppointments}
           actions={appointmentActions}
-          deleteAction={handleDelete} // Pass delete handler for cancelled rows
+          deleteAction={handleDelete}
         />
       </div>
 

@@ -10,9 +10,10 @@ export const createPrescription = async (req, res) => {
     const date = new Date().toISOString().split('T')[0]; // Current date
 
     // Simple validation
-    if (!patientId || !medicinesList || !dosage) {
-        return res.status(400).json({ message: 'Missing required prescription details.' });
-    }
+    if (!patientId || !medicinesList) {
+    return res.status(400).json({ message: 'Missing required prescription details.' });
+}
+
     
     // Optional: Ensure the logged-in user is actually a Doctor (already done by restrictTo, but good for internal sanity check)
 
@@ -36,29 +37,48 @@ export const createPrescription = async (req, res) => {
 
 // @route GET /api/v1/prescriptions/patient/:id
 // Used by Patient Profile to display history
+// controllers/prescriptionController.js
 export const getPrescriptionsByPatient = async (req, res) => {
-    const { id: patientId } = req.params;
+  const { id: patientId } = req.params;
 
-    try {
-        // Fetch prescriptions and join with Employee to get the prescribing doctor's name
-        const [prescriptions] = await db.query(
-            `SELECT 
-                P.Prescription_ID, P.Date, P.Medicines_List, P.Dosage, P.Duration,
-                E.Name AS Doctor_Name
-            FROM Prescription P
-            JOIN Employee E ON P.Employee_ID = E.Employee_ID
-            WHERE P.Patient_ID = ?
-            ORDER BY P.Date DESC`,
-            [patientId]
-        );
-        
-        if (prescriptions.length === 0) {
-            return res.status(200).json([]); // Return empty array if none found
-        }
-        
-        res.status(200).json(prescriptions);
-    } catch (error) {
-        console.error('Error fetching prescription history:', error);
-        res.status(500).json({ message: 'Server error while fetching prescription history.' });
+  try {
+    const [prescriptions] = await db.query(
+      `SELECT 
+          P.Prescription_ID, P.Date, P.Medicines_List, P.Dosage, P.Duration,
+          E.Name AS Doctor_Name,
+          PT.Patient_ID, PT.Name AS Patient_Name
+      FROM Prescription P
+      JOIN Employee E ON P.Employee_ID = E.Employee_ID
+      JOIN Patient PT ON P.Patient_ID = PT.Patient_ID
+      WHERE P.Patient_ID = ?
+      ORDER BY P.Date DESC`,
+      [patientId]
+    );
+
+    res.status(200).json(prescriptions);
+  } catch (error) {
+    console.error('Error fetching prescription history:', error);
+    res.status(500).json({ message: 'Server error while fetching prescription history.' });
+  }
+};
+
+// DELETE /api/v1/prescriptions/:id
+export const deletePrescription = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.query(
+      "DELETE FROM Prescription WHERE Prescription_ID = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Prescription not found." });
     }
+
+    res.status(200).json({ message: "Prescription deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting prescription:", error);
+    res.status(500).json({ message: "Server error while deleting prescription." });
+  }
 };

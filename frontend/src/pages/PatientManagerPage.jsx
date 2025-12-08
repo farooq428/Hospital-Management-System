@@ -1,5 +1,5 @@
 // src/pages/PatientManagerPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import { useAuth } from '../context/AuthContext';
@@ -13,12 +13,20 @@ const PatientManagerPage = () => {
 
   const isReceptionist = user?.role === 'Receptionist';
 
+  // ✅ Format DOB safely
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const dateObj = new Date(dateString);
+    if (isNaN(dateObj.getTime())) return "N/A";
+    return dateObj.toLocaleDateString("en-CA"); // YYYY-MM-DD
+  };
+
   // Fetch patients
   useEffect(() => {
     const fetchPatients = async () => {
       try {
         const res = await API.get('/patients');
-        setPatients(res.data);
+        setPatients(res.data || []);
       } catch (err) {
         console.error('Failed to fetch patients:', err);
       } finally {
@@ -44,6 +52,16 @@ const PatientManagerPage = () => {
       alert('Failed to remove patient. Please try again.');
     }
   };
+
+  // ✅ Prepare patients data with formatted DOB
+  const formattedPatients = useMemo(
+    () =>
+      patients.map(p => ({
+        ...p,
+        formattedDOB: formatDate(p.DOB),
+      })),
+    [patients]
+  );
 
   const patientActions = [
     {
@@ -85,11 +103,11 @@ const PatientManagerPage = () => {
         ) : (
           <DataTable
             title="Registered Patients"
-            data={patients}
+            data={formattedPatients}
             columns={[
               { header: 'Patient ID', accessor: 'Patient_ID' },
               { header: 'Name', accessor: 'Name' },
-              { header: 'DOB', accessor: 'DOB' },
+              { header: 'DOB', accessor: 'formattedDOB' }, // Use formatted DOB
               { header: 'Gender', accessor: 'Gender' },
               { header: 'Phone', accessor: 'Phone' },
             ]}

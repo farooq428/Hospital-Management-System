@@ -154,3 +154,17 @@ export const deleteEmployee = async (req, res) => {
     res.status(500).json({ message: 'Server error during employee deletion.' });
   }
 };
+
+export const getEmployeeById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query("SELECT Employee_ID, Name FROM Employee WHERE Employee_ID = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.status(200).json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

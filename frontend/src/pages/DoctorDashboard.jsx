@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import StatCard from '../components/StatCard';
-import DataTable from '../components/DataTable';
-import { useAuth } from '../context/AuthContext';
-import API from '../api/config';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import StatCard from "../components/StatCard";
+import DataTable from "../components/DataTable";
+import { useAuth } from "../context/AuthContext";
+import API from "../api/config";
+import { useNavigate } from "react-router-dom";
+import PrescriptionForm from "../components/forms/PrescriptionForm";
 
 const DoctorDashboard = () => {
   const { user, isAuthLoading } = useAuth();
@@ -15,31 +16,45 @@ const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = useCallback(async () => {
-    if (isAuthLoading) {
-      setLoading(true);
-      return;
-    }
-    if (!doctorId) {
-      setLoading(false);
-      console.warn("Doctor ID missing from user context.");
-      return;
-    }
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [prescriptionPatient, setPrescriptionPatient] = useState(null);
 
+  // Format date & time
+  const formatDateWithDay = (dateString) => {
+    if (!dateString) return "Invalid date";
+    const dateObj = new Date(dateString);
+    if (isNaN(dateObj.getTime())) return "Invalid date";
+    const day = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+    const date = dateObj.toLocaleDateString("en-CA");
+    return `${day}, ${date}`;
+  };
+
+  const formatTimeOnly = (timeString) => {
+    if (!timeString) return "N/A";
+    try {
+      const timeObj = new Date(`1970-01-01T${timeString}`);
+      return timeObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  // Fetch dashboard data
+  const fetchDashboardData = useCallback(async () => {
+    if (isAuthLoading || !doctorId) return;
     try {
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      // Fetch dashboard stats
-      const statsRes = await API.get('/doctor', config);
-
-      // Fetch doctor appointments
-      const apptsRes = await API.get('/appointments/doctor', config);
+      const statsRes = await API.get("/doctor", config);
+      const apptsRes = await API.get("/appointments/doctor", config);
 
       setStats(statsRes.data);
       setAppointments(apptsRes.data);
     } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
+      console.error("Failed to fetch dashboard data:", err);
     } finally {
       setLoading(false);
     }
@@ -47,110 +62,207 @@ const DoctorDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData, isAuthLoading]);
+  }, [fetchDashboardData]);
 
-  // --- Appointment actions ---
-  const handleCheckPatient = async (appointment) => {
-    const confirm = window.confirm(`Mark appointment with ${appointment.Patient_Name} as Checked?`);
+  // Change appointment status
+  const handleChangeStatus = async (appointment, newStatus) => {
+    const confirm = window.confirm(
+      `Mark ${appointment.Patient_Name} as "${newStatus}"?`
+    );
     if (!confirm) return;
 
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await API.put(`/appointments/${appointment.Appointment_ID}/status`, { Status: 'Checked' }, config);
+      await API.put(
+        `/appointments/${appointment.Appointment_ID}/status`,
+        { Status: newStatus },
+        config
+      );
 
-      setAppointments(prev =>
-        prev.map(a =>
-          a.Appointment_ID === appointment.Appointment_ID ? { ...a, Status: 'Checked' } : a
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.Appointment_ID === appointment.Appointment_ID
+            ? { ...a, Status: newStatus }
+            : a
         )
       );
-      alert('Patient checked successfully!');
     } catch (err) {
-      console.error(err);
-      alert('Failed to check patient.');
+      alert("Failed to update status.");
     }
   };
 
-  const handleStartConsultation = (appointment) => {
-    navigate(`/patients/${appointment.Patient_ID}`);
-  };
+  const handleQuickView = (appointment) => setSelectedPatient(appointment);
+  const handlePrescription = (patient) => setPrescriptionPatient(patient);
 
-  // --- Memoized filters ---
+  // Today & All Appointments
   const todayAppointments = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return appointments.filter(appt => appt.Date === today && appt.Status === 'Scheduled');
-  }, [appointments]);
-
-  const allUpcomingAndHandledAppointments = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     return appointments
-      .filter(appt => appt.Date !== today || appt.Status !== 'Scheduled')
-      .sort((a, b) => new Date(a.Date) - new Date(b.Date) || a.Time.localeCompare(b.Time));
+      .filter((appt) => appt.Date?.includes(today))
+      .map((appt) => ({
+        ...appt,
+        formattedDate: formatDateWithDay(appt.Date),
+        formattedTime: formatTimeOnly(appt.Time),
+      }));
   }, [appointments]);
 
-  // --- Columns ---
-  const todayAppointmentColumns = [
-    { header: 'Time', accessor: 'Time' },
-    { header: 'Patient Name', accessor: 'Patient_Name' },
-    { header: 'Reason', accessor: 'Reason' },
-    { header: 'Status', accessor: 'Status' },
+  const allAppointments = useMemo(() => {
+    return [...appointments]
+      .sort(
+        (a, b) =>
+          new Date(a.Date) - new Date(b.Date) ||
+          (a.Time || "").localeCompare(b.Time || "")
+      )
+      .map((appt) => ({
+        ...appt,
+        formattedDate: formatDateWithDay(appt.Date),
+        formattedTime: formatTimeOnly(appt.Time),
+      }));
+  }, [appointments]);
+
+  const checkedCount = appointments.filter((a) => a.Status === "Checked")
+    .length;
+  const scheduledCount = appointments.filter(
+    (a) => a.Status === "Scheduled"
+  ).length;
+
+  const appointmentColumns = [
+    { header: "Date", accessor: "formattedDate" },
+    { header: "Time", accessor: "formattedTime" },
+    { header: "Patient", accessor: "Patient_Name" },
+    { header: "Reason", accessor: "Reason" },
+    { header: "Status", accessor: "Status" },
   ];
 
-  const allAppointmentColumns = [
-    { header: 'Date', accessor: 'Date' },
-    { header: 'Time', accessor: 'Time' },
-    { header: 'Patient Name', accessor: 'Patient_Name' },
-    { header: 'Status', accessor: 'Status' },
-  ];
-
-  // --- Render ---
-  if (isAuthLoading) return <p className="p-6 text-center text-gray-500">Initializing session...</p>;
-  if (loading) return <div className="p-6 text-center text-blue-600">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 inline-block mr-2"></div>
-    Loading dashboard...
-  </div>;
+  if (loading) return <p className="p-6 text-center">Loading dashboard...</p>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-2">
-        🩺 Welcome Back, Dr. {user?.Name || 'Doctor'}
+    <div className="w-full min-h-screen p-6 bg-gray-50">
+      <h2 className="text-3xl font-bold mb-6">
+        🩺 Welcome Back, Dr. {user?.name || "Doctor"}
       </h2>
-      <p className="text-gray-500 mb-6">Your agenda and clinical resources are below.</p>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <StatCard title="Today's Scheduled" value={todayAppointments.length} icon="📅" color="#3498db" />
-        <StatCard title="Total Patients Under Care" value={stats?.totalPatients || 0} icon="👤" color="#2ecc71" />
-        <StatCard title="Pending Test Reviews" value={stats?.pendingReports || 0} icon="🔬" color="#f39c12" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="Today's Appointments"
+          value={todayAppointments.length}
+        />
+        <StatCard title="Total Patients" value={stats?.totalPatients || 0} />
+        <StatCard title="Pending Reports" value={stats?.pendingReports || 0} />
       </div>
 
-      <hr className="mb-8 border-gray-200" />
+      {/* Analytics */}
+      <div className="bg-white p-6 rounded shadow mb-10">
+        <h3 className="text-xl font-semibold mb-4">
+          📊 Appointments Analytics
+        </h3>
+        <p>✅ Checked: {checkedCount}</p>
+        <p>📅 Scheduled: {scheduledCount}</p>
+      </div>
 
       {/* Today's Appointments */}
-      <div className="mb-10">
-        <h3 className="text-2xl font-semibold mb-4 text-blue-700">Today's Scheduled Consultations</h3>
+      {todayAppointments.length > 0 ? (
         <DataTable
-          title={`Pending (${todayAppointments.length})`}
-          columns={todayAppointmentColumns}
+          title="Today's Appointments"
+          columns={appointmentColumns}
           data={todayAppointments}
           actions={[
-            { label: 'Check Patient', handler: handleCheckPatient, style: { background: '#27ae60', color: 'white', borderRadius: '4px' } },
-            { label: 'Start Consultation', handler: handleStartConsultation, style: { background: '#3498db', color: 'white', borderRadius: '4px' } },
+            {
+              label: "✅ Mark Checked",
+              handler: (row) => handleChangeStatus(row, "Checked"),
+              show: (row) => row.Status !== "Checked",
+            },
+            {
+              label: "👁️ Quick View",
+              handler: handleQuickView,
+            },
+            {
+              label: "📝 Write Prescription",
+              handler: handlePrescription,
+            },
           ]}
         />
-      </div>
+      ) : (
+        <p className="text-center text-gray-500 text-lg mt-6">
+          🌟 No appointments today! Take a deep breath and enjoy a calm moment. 😌
+        </p>
+      )}
 
       {/* All Appointments */}
-      <div>
-        <h3 className="text-2xl font-semibold mb-4 text-gray-700">All Appointments ({appointments.length})</h3>
-        <DataTable
-          title={`All Appointments (${allUpcomingAndHandledAppointments.length})`}
-          columns={allAppointmentColumns}
-          data={allUpcomingAndHandledAppointments}
-          actions={[
-            { label: 'View Profile', handler: (row) => navigate(`/patients/${row.Patient_ID}`), style: { background: '#95a5a6', color: 'white', borderRadius: '4px' } },
-          ]}
-        />
+      <div className="mt-10">
+        {allAppointments.length > 0 ? (
+          <DataTable
+            title="All Appointments"
+            columns={appointmentColumns}
+            data={allAppointments}
+            actions={[
+              {
+                label: "View Profile",
+                handler: (row) => navigate(`/patients/${row.Patient_ID}`),
+              },
+              {
+                label: "✅ Mark Checked",
+                handler: (row) => handleChangeStatus(row, "Checked"),
+                show: (row) => row.Status !== "Checked",
+              },
+              {
+                label: "📝 Write Prescription",
+                handler: handlePrescription,
+              },
+            ]}
+          />
+        ) : (
+          <p className="text-center text-gray-500 text-lg mt-6">
+            ✨ No appointments scheduled yet. The schedule is all yours! 🗓️
+          </p>
+        )}
       </div>
+
+      {/* Quick View Modal */}
+      {selectedPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded w-96">
+            <h2 className="text-xl font-bold mb-2">Patient Quick View</h2>
+            <p>
+              <strong>Name:</strong> {selectedPatient.Patient_Name}
+            </p>
+            <p>
+              <strong>Reason:</strong> {selectedPatient.Reason}
+            </p>
+            <p>
+              <strong>Time:</strong> {selectedPatient.formattedTime}
+            </p>
+
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={() =>
+                  navigate(`/patients/${selectedPatient.Patient_ID}`)
+                }
+              >
+                Full Profile
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+                onClick={() => setSelectedPatient(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prescription Form */}
+      {prescriptionPatient && (
+        <PrescriptionForm
+          patientId={prescriptionPatient.Patient_ID}
+          doctorId={doctorId}
+          onClose={() => setPrescriptionPatient(null)}
+          onSave={() => setPrescriptionPatient(null)}
+        />
+      )}
     </div>
   );
 };

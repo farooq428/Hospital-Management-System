@@ -6,7 +6,6 @@ const navLinks = [
   { name: 'Dashboard', path: '/', icon: '🏠', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { name: 'Employee Manager', path: '/employees', icon: '🧑‍💼', roles: ['Admin'] },
   { name: 'Appointments', path: '/appointments', icon: '📅', roles: ['Doctor', 'Receptionist', 'Admin'] },
-  { name: 'Patient Manager', path: '/patients', icon: '👤', roles: ['Doctor', 'Receptionist'] },
   { name: 'Billing Manager', path: '/receptionist/bills', icon: '💳', roles: ['Receptionist'] },
   { name: 'Room Manager', path: '/receptionist/rooms', icon: '🛏️', roles: ['Receptionist' , 'Admin'] },
 ];

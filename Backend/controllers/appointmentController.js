@@ -178,3 +178,36 @@ export const cancelAppointment = async (req, res) => {
     res.status(500).json({ message: 'Server error while cancelling appointment.' });
   }
 };
+
+// Update Appointment Status (e.g., mark as Checked)
+export const updateAppointmentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { Status } = req.body; // Expect "Checked" or "Cancelled"
+
+  if (!Status) {
+    return res.status(400).json({ message: 'Status is required.' });
+  }
+
+  // Optional: only allow certain statuses
+  const allowedStatuses = ['Scheduled', 'Cancelled', 'Checked'];
+  if (!allowedStatuses.includes(Status)) {
+    return res.status(400).json({ message: `Invalid status. Allowed: ${allowedStatuses.join(', ')}` });
+  }
+
+  try {
+    const [result] = await db.query(
+      `UPDATE Appointment SET Status = ? WHERE Appointment_ID = ?`,
+      [Status, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Appointment not found.' });
+    }
+
+    res.status(200).json({ message: `Appointment status updated to "${Status}" successfully.` });
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    res.status(500).json({ message: 'Server error while updating appointment status.' });
+  }
+};
+
