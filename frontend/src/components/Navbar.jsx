@@ -1,34 +1,36 @@
 // src/components/Navbar.jsx
 
 import React from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
   { name: "Home", path: "/", roles: ["Admin", "Doctor", "Receptionist"] },
 
-  { name: "Employee Manager", path: "/employees", roles: ["Admin"] },
+  { name: "Employee Management", path: "/employees", roles: ["Admin"] },
 
-  { name: "Appointments", path: "/appointments", roles: ["Doctor", "Receptionist", "Admin"] },
+  { name: "Appointments", path: "/appointments", roles: ["Doctor", "Receptionist"] },
 
-  { name: "Billing Manager", path: "/receptionist/bills", roles: ["Receptionist"] },
+  { name: "Billing Management", path: "/receptionist/bills", roles: ["Receptionist"] },
 
-  { name: "Room Manager", path: "/rooms", roles: ["Receptionist", "Admin"] },
+  { name: "Room Manager", path: "/rooms", roles: ["Receptionist"] },
 ];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ get current page path
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  // ✅ Hide navbar on login page
+  // ✅ Hide navbar if not logged in
   if (!user) return null;
 
   const userRole = user.role;
+  const currentPath = location.pathname;
 
   return (
     <nav className="bg-[#1e3a8a] shadow-md sticky top-0 z-50">
@@ -40,22 +42,21 @@ const Navbar = () => {
             EasyCare HMS
           </Link>
 
-          {/* ✅ Role-Based Links (EXACT sidebar rules) */}
+          {/* ✅ Role-Based + Hide Current Page Link */}
           <div className="hidden md:flex space-x-4">
             {navLinks
-              .filter(link => link.roles.includes(userRole))
+              .filter(link => 
+                link.roles.includes(userRole) && // ✅ role check
+                !(
+                  (link.path === "/" && (currentPath === "/" || currentPath === "/home" || currentPath === "/admin"  )) || // ✅ hide Home if on / or /home
+                  currentPath === link.path // ✅ hide current page link
+                )
+              )
               .map(link => (
                 <NavLink
                   key={link.name}
                   to={link.path}
-                  className={({ isActive }) =>
-                    `px-3 py-2 rounded-md text-sm font-semibold transition
-                    ${
-                      isActive
-                        ? "bg-blue-500 text-white"
-                        : "text-blue-100 hover:bg-blue-700 hover:text-white"
-                    }`
-                  }
+                  className="px-3 py-2 rounded-md text-sm font-semibold transition text-blue-100 hover:bg-blue-700 hover:text-white"
                 >
                   {link.name}
                 </NavLink>
