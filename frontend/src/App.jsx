@@ -22,6 +22,8 @@ import BillingManagerPage from "./pages/BillingManagerPage";
 import RoomManagerPage from "./pages/RoomManagerPage";
 import RolesPage from "./pages/RolesPage";
 import LogsPage from "./pages/LogsPage";
+import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
 
 const App = () => {
   const { user } = useAuth();
@@ -33,6 +35,10 @@ const App = () => {
     user && !publicRoutes.includes(location.pathname) && !isDoctorPage;
 
   return (
+
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* The Navbar will stick to the top */}
+      <Navbar />
     <div className="flex min-h-screen bg-gray-100">
       {showSidebar && <Sidebar />}
 
@@ -116,7 +122,12 @@ const App = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      
     </div>
+    <Footer />
+    </div>
+     
   );
 };
 
