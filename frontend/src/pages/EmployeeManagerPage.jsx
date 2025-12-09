@@ -79,14 +79,15 @@ const EmployeeManagerPage = () => {
         <h1 className="text-3xl sm:text-4xl font-bold text-[#6a1b9a] mb-4 sm:mb-0">
           Current staff of EasyCare
         </h1>
-        <button
+        
+      </div>
+      <div><button
           onClick={() => handleAddOrEdit(null)}
-          className="px-5 py-2 bg-[#2ecc71] hover:bg-[#27ae60] text-white rounded-2xl shadow-md transition duration-300"
+          className="px-5 py-2 bg-[#773ee0] hover:bg-[#4a0dd8] text-white rounded-2xl shadow-md transition duration-300"
         >
           Add New Employee
-        </button>
-      </div>
-
+        </button></div>
+        <br />
       {/* Data Table */}
       <div className="bg-white rounded-xl shadow-md overflow-auto ">
         <DataTable

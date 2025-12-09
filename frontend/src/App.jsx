@@ -39,7 +39,7 @@ const App = () => {
 
           {/* ✅ PUBLIC ROUTES */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/home" element={<HomePage />} />
+          
 
           {/* ✅ ADMIN ROUTES */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
@@ -83,10 +83,10 @@ const App = () => {
                 ) : user.role === "Receptionist" ? (
                   <Navigate to="/receptionist" replace />
                 ) : (
-                  <HomePage />
+                  <LoginPage />
                 )
               ) : (
-                <HomePage />
+                <LoginPage />
               )
             }
           />

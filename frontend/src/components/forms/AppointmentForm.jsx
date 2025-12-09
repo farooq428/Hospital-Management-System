@@ -46,63 +46,73 @@ const AppointmentForm = ({ initialData = {}, isEdit = false, onSuccess, onClose 
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const { patientId, doctorId, date, time, reason } = formData;
-    if (!patientId || !doctorId || !date || !time || !reason) {
-      alert("Please fill all fields");
-      return;
-    }
+  const { patientId, doctorId, date, time, reason } = formData;
+  if (!patientId || !doctorId || !date || !time || !reason) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    try {
-      setSubmitting(true);
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      let response;
+  // --- Check for past date/time ---
+  const selectedDateTime = new Date(`${date}T${time}`);
+  const now = new Date();
 
-      if (isEdit) {
-        // Update existing appointment
-        response = await API.put(
-          `/appointments/${initialData.Appointment_ID}`,
-          formData,
-          config
-        );
-        alert("Appointment updated successfully!");
-      } else {
-        // Create new appointment
-        response = await API.post("/appointments", formData, config);
-        alert("Appointment booked successfully!");
-      }
+  console.log("Selected appointment:", selectedDateTime);
+  console.log("Current date/time:", now);
 
-      // Prepare new/updated appointment object for parent
-      const appointmentObj = {
-        Appointment_ID: isEdit
-          ? initialData.Appointment_ID
-          : response.data.appointmentId,
-        Date: date,
-        Time: time,
-        Patient_Name: patients.find((p) => p.Patient_ID == patientId)?.Name,
-        Doctor_Name: doctors.find((d) => d.Employee_ID == doctorId)?.Name,
-        Reason: reason,
-        Status: isEdit ? initialData.Status : "Scheduled",
-      };
+  if (selectedDateTime < now) {
+    alert("You cannot book an appointment in the past. Please select a future date and time.");
+    return;
+  }
+  // --- End of check ---
 
-      if (onSuccess) onSuccess(appointmentObj);
+  try {
+    setSubmitting(true);
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+    let response;
 
-      // Reset form if creating new
-      if (!isEdit)
-        setFormData({ patientId: "", doctorId: "", date: "", time: "", reason: "" });
-
-      if (onClose) onClose();
-    } catch (err) {
-      console.error("Failed to submit appointment:", err);
-      alert(
-        err.response?.data?.message ||
-          "Failed to submit appointment. Check your inputs or permissions."
+    if (isEdit) {
+      response = await API.put(
+        `/appointments/${initialData.Appointment_ID}`,
+        formData,
+        config
       );
-    } finally {
-      setSubmitting(false);
+      alert("Appointment updated successfully!");
+    } else {
+      response = await API.post("/appointments", formData, config);
+      alert("Appointment booked successfully!");
     }
-  };
+
+    const appointmentObj = {
+      Appointment_ID: isEdit
+        ? initialData.Appointment_ID
+        : response.data.appointmentId,
+      Date: date,
+      Time: time,
+      Patient_Name: patients.find((p) => p.Patient_ID == patientId)?.Name,
+      Doctor_Name: doctors.find((d) => d.Employee_ID == doctorId)?.Name,
+      Reason: reason,
+      Status: isEdit ? initialData.Status : "Scheduled",
+    };
+
+    if (onSuccess) onSuccess(appointmentObj);
+
+    if (!isEdit)
+      setFormData({ patientId: "", doctorId: "", date: "", time: "", reason: "" });
+
+    if (onClose) onClose();
+  } catch (err) {
+    console.error("Failed to submit appointment:", err);
+    alert(
+      err.response?.data?.message ||
+        "Failed to submit appointment. Check your inputs or permissions."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   if (loading) return <div className="p-6 text-center text-gray-600">Loading form data...</div>;
 
