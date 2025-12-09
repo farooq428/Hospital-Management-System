@@ -9,7 +9,6 @@ import Footer from "./components/Footer";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import ReceptionistDashboard from "./pages/ReceptionistDashboard";
@@ -17,12 +16,16 @@ import PatientManagerPage from "./pages/PatientManagerPage";
 import PatientProfile from "./components/PatientProfile";
 import NewPatient from "./pages/NewPatient";
 import AppointmentsPage from "./pages/AppointmentsPage";
-import NewAppointment from "./pages/NewAppointment";
 import EmployeeManagerPage from "./pages/EmployeeManagerPage";
 import BillingManagerPage from "./pages/BillingManagerPage";
 import RoomManagerPage from "./pages/RoomManagerPage";
 import RolesPage from "./pages/RolesPage";
 import LogsPage from "./pages/LogsPage";
+import AppointmentForm from "./components/forms/AppointmentForm";
+
+
+
+
 
 const App = () => {
   const { user } = useAuth();
@@ -59,8 +62,9 @@ const App = () => {
             <Route path="/receptionist" element={<ReceptionistDashboard />} />
             <Route path="/patients/new" element={<NewPatient />} />
             <Route path="/patients" element={<PatientManagerPage />} />
-            <Route path="/appointments/new" element={<NewAppointment />} />
+        
             <Route path="/receptionist/bills" element={<BillingManagerPage />} />
+            <Route path="/appointments/new" element={<AppointmentForm />} />
           </Route>
 
           {/* ✅ SHARED ROUTES */}
