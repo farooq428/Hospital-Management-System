@@ -28,7 +28,7 @@ CREATE TABLE Patient (
     DOB DATE,
     Gender ENUM('Male', 'Female', 'Other'),
     Address VARCHAR(500),
-    Phone VARCHAR(20) UNIQUE
+    Phone VARCHAR(11)
 );
 
 -- 4. Appointment Table
@@ -137,3 +137,11 @@ VALUES ('Admin', 1, 'admin@easycare.com', 'admin123', 'Active');
 
 ALTER TABLE Appointment 
 MODIFY Status ENUM('Scheduled', 'Cancelled', 'Checked') DEFAULT 'Scheduled';
+
+ALTER TABLE patient MODIFY Phone VARCHAR(11);
+
+SELECT * FROM Employee ;
+
+DELETE FROM Employee WHERE Employee_ID  = 5;
+
+

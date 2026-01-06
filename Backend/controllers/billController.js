@@ -81,8 +81,7 @@ export const updateBillStatus = async (req, res) => {
     }
 };
 
-// @route GET /api/v1/bills/patient/:id
-// Used by Patient Profile to display billing history
+
 export const getBillsByPatient = async (req, res) => {
     const { id: patientId } = req.params;
 

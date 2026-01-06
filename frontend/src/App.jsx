@@ -20,7 +20,6 @@ import EmployeeManagerPage from "./pages/EmployeeManagerPage";
 import BillingManagerPage from "./pages/BillingManagerPage";
 import RoomManagerPage from "./pages/RoomManagerPage";
 import RolesPage from "./pages/RolesPage";
-import LogsPage from "./pages/LogsPage";
 import AppointmentForm from "./components/forms/AppointmentForm";
 
 
@@ -49,7 +48,7 @@ const App = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/employees" element={<EmployeeManagerPage />} />
             <Route path="/roles" element={<RolesPage />} />
-            <Route path="/logs" element={<LogsPage />} />
+            
           </Route>
 
           {/* ✅ DOCTOR ROUTES */}

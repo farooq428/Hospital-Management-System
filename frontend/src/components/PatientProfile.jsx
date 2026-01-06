@@ -34,6 +34,11 @@ const PatientProfile = () => {
   if (!patient) return <p className="p-6">Patient not found.</p>;
 
   const tabs = ['profile', 'prescriptions', 'reports', 'billing'];
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return dateString.split('T')[0];
+  };
+
 
   return (
     <div className="p-6">
@@ -59,7 +64,7 @@ const PatientProfile = () => {
         {activeTab === 'profile' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <p><strong>Patient ID:</strong> {patient.Patient_ID}</p>
-            <p><strong>DOB:</strong> {patient.DOB}</p>
+            <p><strong>DOB:</strong> {formatDate(patient.DOB)}</p>
             <p><strong>Gender:</strong> {patient.Gender}</p>
             <p><strong>Phone:</strong> {patient.Phone}</p>
             <p className="sm:col-span-2"><strong>Address:</strong> {patient.Address}</p>
@@ -73,7 +78,7 @@ const PatientProfile = () => {
                 onClick={() => setShowPrescriptionForm(true)}
                 className="mb-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                ✍️ Issue New Prescription
+                ✍️ Issue Prescription
               </button>
             )}
 

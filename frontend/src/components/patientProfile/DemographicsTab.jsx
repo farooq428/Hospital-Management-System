@@ -1,5 +1,4 @@
 // src/components/patientProfile/DemographicsTab.jsx
-import React from 'react';
 
 const DemographicsTab = ({ data }) => {
     return (

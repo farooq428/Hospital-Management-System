@@ -105,12 +105,12 @@ const AdminDashboard = () => {
           Admin Control Panel
         </h1>
         <p className="text-gray-600 mt-1">
-          Welcome, {user?.name || 'Admin'} — manage users, roles, rooms, and resources.
+          Welcome, {user?.name} — manage users, roles, rooms, and resources of your hospital.
         </p>
       </header>
 
       {/* Stat Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <section className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-11">
         {loading ? (
           <p>Loading stats...</p>
         ) : (
@@ -128,13 +128,13 @@ const AdminDashboard = () => {
 
       {/* Core Management Buttons */}
       <section>
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4">Core Management</h2>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-6">Core Management</h2>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           <QuickActionButton
             label="Manage Employees"
             icon="🧑‍💼"
             onClick={() => handleNavigation('/employees')}
-            color="blue"
+            color="green"
           />
           <QuickActionButton
             label="Define Roles & Access"
@@ -142,12 +142,7 @@ const AdminDashboard = () => {
             onClick={() => handleNavigation('/roles')}
             color="blue"
           />
-          <QuickActionButton
-            label="Review System Logs"
-            icon="📜"
-            onClick={() => handleNavigation('/logs')}
-            color="green"
-          />
+          
           <QuickActionButton
             label="Manage Rooms"
             icon="🏠"

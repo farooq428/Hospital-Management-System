@@ -5,8 +5,8 @@ import {
     getAdminDashboardStats,
     getReceptionistDashboardStats,
     getDoctorDashboardStats,
-    getDoctorAppointments, // 🟢 CORRECTED: Now imported
-    getSystemLogs,
+    getDoctorAppointments, 
+    
 } from '../controllers/dashboardController.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
@@ -36,6 +36,6 @@ router.get('/appointments/doctor', protect, restrictTo('Doctor'), getDoctorAppoi
 // ============================
 // System logs
 // ============================
-router.get('/logs', protect, restrictTo('Admin'), getSystemLogs);
+
 
 export default router;

@@ -81,7 +81,7 @@ const Navbar = () => {
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 transition text-white text-sm px-4 py-2 rounded-md font-semibold"
             >
-              Log Out
+              Sign Out
             </button>
 
             {/* ✅ Mobile Hamburger */}

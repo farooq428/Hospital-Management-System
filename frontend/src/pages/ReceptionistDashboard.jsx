@@ -33,11 +33,11 @@ const ReceptionistDashboard = () => {
         ]);
 
         setStats({
-          totalAppointments: appointmentsRes.data.totalAppointments || 0,
+          totalAppointments: appointmentsRes.data.totalAppointments || "No Appointments",
           patientsCheckedIn: dashboardRes.data.patientsCheckedIn || 0,
-          availableRooms: dashboardRes.data.availableRooms || 0,
-          totalRooms: dashboardRes.data.totalRooms || 0,
-          pendingBills: dashboardRes.data.pendingBills || 0,
+          availableRooms: dashboardRes.data.availableRooms || "No Rooms Available",
+          totalRooms: dashboardRes.data.totalRooms || "No Rooms",
+          pendingBills: dashboardRes.data.pendingBills || "No Pending Bills",
         });
       } catch (err) {
         console.error('Failed to fetch stats:', err);
@@ -150,17 +150,22 @@ const ReceptionistDashboard = () => {
 
       {/* -------------------- Quick Action Buttons -------------------- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <QuickActionButton
-          label="Register Patient"
-          icon="➕"
-          onClick={() => navigate('/patients/new')}
-        />
-
+        
         {/* ⭐ NEW: ROOM MANAGEMENT BUTTON (Copied from Admin Dashboard UI flow) */}
         <QuickActionButton
           label="Room Management"
           icon="🛏️"
           onClick={() => navigate('/rooms')}
+        />
+        <QuickActionButton
+          label="Patient Management"
+          icon="🤦"
+          onClick={() => navigate('/patients')}
+        />
+        <QuickActionButton
+          label="Add Patient Record"
+          icon="➕"
+          onClick={() => navigate('/patients/new')}
         />
       </div>
 

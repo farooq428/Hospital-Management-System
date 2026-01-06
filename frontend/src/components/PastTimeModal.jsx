@@ -9,12 +9,7 @@ const PastTimeModal = ({ isOpen, onClose, title, children }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6 transform transition-all duration-300 scale-100 opacity-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-red-600">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            &times;
-          </button>
+          
         </div>
         <div className="text-gray-700">
           {children}
@@ -24,7 +19,7 @@ const PastTimeModal = ({ isOpen, onClose, title, children }) => {
             onClick={onClose}
             className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150"
           >
-            Acknowledge
+            Understood
           </button>
         </div>
       </div>
