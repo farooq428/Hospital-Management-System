@@ -145,3 +145,4 @@ SELECT * FROM Employee ;
 DELETE FROM Employee WHERE Employee_ID  = 5;
 
 
+

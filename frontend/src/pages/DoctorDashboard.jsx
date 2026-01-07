@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import API from "../api/config";
 import { useNavigate } from "react-router-dom";
 import PrescriptionForm from "../components/forms/PrescriptionForm";
+import TestReportForm from "../components/forms/TestReportForm";
 
 const DoctorDashboard = () => {
   const { user, isAuthLoading } = useAuth();
@@ -18,6 +19,7 @@ const DoctorDashboard = () => {
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [prescriptionPatient, setPrescriptionPatient] = useState(null);
+  const [testReportPatient, setTestReportPatient] = useState(null);
 
   // Format date & time
   const formatDateWithDay = (dateString) => {
@@ -48,8 +50,8 @@ const DoctorDashboard = () => {
     try {
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const statsRes = await API.get("/doctor", config);
-      const apptsRes = await API.get("/appointments/doctor", config);
+      const statsRes = await API.get("/dashboard/doctor", config);
+      const apptsRes = await API.get("/dashboard/appointments/doctor", config);
 
       setStats(statsRes.data);
       setAppointments(apptsRes.data);
@@ -108,11 +110,15 @@ const DoctorDashboard = () => {
 
   const allAppointments = useMemo(() => {
     return [...appointments]
-      .sort(
-        (a, b) =>
-          new Date(a.Date) - new Date(b.Date) ||
-          (a.Time || "").localeCompare(b.Time || "")
-      )
+      .sort((a, b) => {
+        // 1. Checked status: checked goes last
+        if (a.Status === "Checked" && b.Status !== "Checked") return 1;
+        if (a.Status !== "Checked" && b.Status === "Checked") return -1;
+        // 2. By date (older first)
+        const dateA = new Date(a.Date + "T" + (a.Time || "00:00"));
+        const dateB = new Date(b.Date + "T" + (b.Time || "00:00"));
+        return dateA - dateB;
+      })
       .map((appt) => ({
         ...appt,
         formattedDate: formatDateWithDay(appt.Date),
@@ -181,14 +187,21 @@ const DoctorDashboard = () => {
               label: "📝 Write Prescription",
               handler: handlePrescription,
             },
+            {
+              label: "🧪 Add Test Report",
+              handler: (row) => setTestReportPatient(row),
+            },
           ]}
         />
       ) : (
         <p className="text-center text-gray-500 text-lg mt-6">
-          🌟 No appointments today! Take a deep breath and enjoy a calm moment. 😌
+          🌟 No appointments today! Take a deep breath and enjoy a calm moment.
         </p>
       )}
-
+      <p className="text-center text-gray-800 text-2xl font-bold mt-6
+"> 
+          Scheduled Appointments for the Future
+        </p>
       {/* All Appointments */}
       <div className="mt-10">
         {allAppointments.length > 0 ? (
@@ -198,17 +211,21 @@ const DoctorDashboard = () => {
             data={allAppointments}
             actions={[
               {
-                label: "View Profile",
-                handler: (row) => navigate(`/patients/${row.Patient_ID}`),
-              },
-              {
                 label: "✅ Mark Checked",
                 handler: (row) => handleChangeStatus(row, "Checked"),
                 show: (row) => row.Status !== "Checked",
               },
               {
+                label: "👁️ Quick View",
+                handler: handleQuickView,
+              },
+              {
                 label: "📝 Write Prescription",
                 handler: handlePrescription,
+              },
+              {
+                label: "🧪 Add Test Report",
+                handler: (row) => setTestReportPatient(row),
               },
             ]}
           />
@@ -261,6 +278,15 @@ const DoctorDashboard = () => {
           doctorId={doctorId}
           onClose={() => setPrescriptionPatient(null)}
           onSave={() => setPrescriptionPatient(null)}
+        />
+      )}
+
+      {/* Test Report Form Modal */}
+      {testReportPatient && (
+        <TestReportForm
+          patientId={testReportPatient.Patient_ID}
+          onClose={() => setTestReportPatient(null)}
+          onSave={() => setTestReportPatient(null)}
         />
       )}
     </div>
