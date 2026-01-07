@@ -62,7 +62,7 @@ const PatientProfile = () => {
       {/* Tab Content */}
       <div className="bg-white p-4 rounded-lg shadow-md">
         {activeTab === 'profile' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <p><strong>Patient ID:</strong> {patient.Patient_ID}</p>
             <p><strong>DOB:</strong> {formatDate(patient.DOB)}</p>
             <p><strong>Gender:</strong> {patient.Gender}</p>

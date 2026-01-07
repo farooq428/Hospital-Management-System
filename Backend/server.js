@@ -18,7 +18,6 @@ import employeeRoutes from './routes/employeeRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js'; 
 import roleRoutes from './routes/roleRoutes.js';
-import testReportRoutes from "./routes/testReportRoutes.js";
 
 
 
@@ -46,8 +45,7 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/roles', roleRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use("/api/v1/test-reports", testReportRoutes); 
+app.use('/api/v1/dashboard', dashboardRoutes); 
 
 
 // Start Server
