@@ -5,8 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const navLinks = [
   { name: "Home", path: "/", roles: ["Admin", "Doctor", "Receptionist"] },
   { name: "Employee Management", path: "/employees", roles: ["Admin"] },
-  { name: "Appointments", path: "/appointments", roles: ["Doctor", "Receptionist"] },
-  // { name: "Bill Management", path: "/receptionist/bills", roles: ["Receptionist"] },
+  { name: "Appointments", path: "/appointments", roles: ["Receptionist"] },
   { name: "Room Management", path: "/rooms", roles: ["Receptionist"] },
   { name: "Patient Management", path: "/patients", roles: ["Receptionist"] },
 ];

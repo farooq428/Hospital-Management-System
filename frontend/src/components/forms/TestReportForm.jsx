@@ -12,7 +12,7 @@ const TestReportForm = ({ patientId, onClose, onSave }) => {
     setLoading(true);
     try {
       await API.post(
-        "/test-reports",
+        "/reports",
         {
           Patient_ID: patientId,
           Type: type,
