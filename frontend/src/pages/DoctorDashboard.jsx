@@ -132,13 +132,14 @@ const DoctorDashboard = () => {
     (a) => a.Status === "Scheduled"
   ).length;
 
-  const appointmentColumns = [
-    { header: "Date", accessor: "formattedDate" },
-    { header: "Time", accessor: "formattedTime" },
-    { header: "Patient", accessor: "Patient_Name" },
-    { header: "Reason", accessor: "Reason" },
-    { header: "Status", accessor: "Status" },
-  ];
+const appointmentColumns = [
+  { header: "Patient ID", accessor: "Patient_ID" }, // <-- Add this line
+  { header: "Date", accessor: "formattedDate" },
+  { header: "Time", accessor: "formattedTime" },
+  { header: "Patient", accessor: "Patient_Name" },
+  { header: "Reason", accessor: "Reason" },
+  { header: "Status", accessor: "Status" },
+];
 
   if (loading) return <p className="p-6 text-center">Loading dashboard...</p>;
 
@@ -182,14 +183,17 @@ const DoctorDashboard = () => {
             {
               label: "👁️ Quick View",
               handler: handleQuickView,
+              // Quick View can always show, or add a show if you want to restrict
             },
             {
               label: "📝 Write Prescription",
               handler: handlePrescription,
+              show: (row) => row.Status !== "Checked", // <-- Add this
             },
             {
               label: "🧪 Add Test Report",
               handler: (row) => setTestReportPatient(row),
+              show: (row) => row.Status !== "Checked", // <-- Add this
             },
           ]}
         />
@@ -218,14 +222,17 @@ const DoctorDashboard = () => {
               {
                 label: "👁️ Quick View",
                 handler: handleQuickView,
+                // Quick View can always show, or add a show if you want to restrict
               },
               {
                 label: "📝 Write Prescription",
                 handler: handlePrescription,
+                show: (row) => row.Status !== "Checked", // <-- Add this
               },
               {
                 label: "🧪 Add Test Report",
                 handler: (row) => setTestReportPatient(row),
+                show: (row) => row.Status !== "Checked", // <-- Add this
               },
             ]}
           />
