@@ -5,18 +5,24 @@ import { useAuth } from "../context/AuthContext";
 import API from "../api/config";
 import BillForm from "../components/forms/BillForm";
 
-// --- Minimal Icons ---
-const PlusIcon = () => (
-  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
+// --- Icons (Merged into a cleaner set) ---
+const Icons = {
+  Plus: () => (
+    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    </svg>
+  ),
+  Search: () => (
+    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  Close: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+};
 
 // --- Refined Quick Book Modal ---
 const QuickBookModal = ({ patient, onClose }) => {
@@ -32,7 +38,7 @@ const QuickBookModal = ({ patient, onClose }) => {
   useEffect(() => {
     API.get("/employees?role=Doctor")
       .then(res => setDoctors(res.data || []))
-      .catch(err => console.error(err));
+      .catch(err => console.error("Fetch error:", err));
   }, []);
 
   const handleQuickBook = async (e) => {
@@ -40,54 +46,59 @@ const QuickBookModal = ({ patient, onClose }) => {
     setSubmitting(true);
     try {
       await API.post("/appointments", { patientId: patient.Patient_ID, ...formData });
-      alert("Appointment confirmed! ✅");
       onClose();
+      // Use a toast here if you have one, alert is a UX killer
+      alert("Appointment successfully scheduled.");
     } catch (err) {
-      alert("Error: Doctor may be unavailable.");
+      alert("Scheduling conflict: Please select another time.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 transform transition-all scale-100">
+        <div className="bg-indigo-600 px-6 py-5 flex justify-between items-center text-white">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Quick Booking</h2>
-            <p className="text-xs text-slate-500">Patient: {patient.Name}</p>
+            <h2 className="text-xl font-bold tracking-tight">Quick Schedule</h2>
+            <p className="text-indigo-100 text-xs opacity-90 mt-0.5">Booking for {patient.Name}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors text-2xl">&times;</button>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <Icons.Close />
+          </button>
         </div>
 
-        <form onSubmit={handleQuickBook} className="p-6 space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Assign Doctor</label>
+        <form onSubmit={handleQuickBook} className="p-6 space-y-6">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Attending Physician</label>
             <select 
               required
-              className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
               value={formData.doctorId}
               onChange={(e) => setFormData({...formData, doctorId: e.target.value})}
             >
-              <option value="">Select Practitioner...</option>
+              <option value="">Choose a doctor...</option>
               {doctors.map(d => <option key={d.Employee_ID} value={d.Employee_ID}>{d.Name}</option>)}
             </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Date</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Preferred Date</label>
               <input 
-                type="date" required className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm"
+                type="date" required 
+                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 min={new Date().toISOString().split("T")[0]}
                 value={formData.date}
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Time</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Time Slot</label>
               <input 
-                type="time" required className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm"
+                type="time" required 
+                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 value={formData.time}
                 onChange={(e) => setFormData({...formData, time: e.target.value})}
               />
@@ -97,9 +108,9 @@ const QuickBookModal = ({ patient, onClose }) => {
           <button 
             type="submit" 
             disabled={submitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold shadow-md shadow-blue-200 transition-all flex justify-center items-center active:scale-[0.98]"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 transition-all flex justify-center items-center active:scale-[0.97] disabled:opacity-50"
           >
-            {submitting ? "Processing..." : "Confirm Schedule"}
+            {submitting ? "Confirming..." : "Confirm Appointment"}
           </button>
         </form>
       </div>
@@ -136,87 +147,97 @@ const PatientManagerPage = () => {
 
   const patientActions = [
     {
-      label: "Profile",
+      label: " ,View Profile",
       handler: (p) => navigate(`/patients/${p.Patient_ID}`),
-      className: "text-slate-600 hover:text-blue-600 font-semibold text-sm",
+      className: "px-3 py-1 text-slate-600 hover:bg-slate-100 rounded-md transition-colors font-medium text-xs",
     },
     {
-      label: "Book",
+      label: "Book Appointment",
       handler: (p) => { setSelectedPatient(p); setQuickBookModal(true); },
       role: "Receptionist",
-      className: "text-blue-600 hover:text-blue-800 font-bold text-sm",
+      className: "px-3 py-1 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors font-bold text-xs",
     },
     {
-      label: "Bill",
+      label: "Generate Invoice",
       handler: (p) => { setSelectedPatient(p); setInvoiceModal(true); },
       role: "Receptionist",
-      className: "text-emerald-600 hover:text-emerald-800 font-semibold text-sm",
+      className: "px-3 py-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors font-bold text-xs",
     }
   ];
 
   const filteredActions = patientActions.filter(a => !a.role || user?.role === a.role || user?.role === "Admin");
 
   return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] p-6 lg:px-12">
-      {/* --- Cleaner Header --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Patient Directory</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Manage patient records and clinical scheduling</p>
+    <div className="w-full min-h-screen bg-[#F1F5F9] p-4 md:p-8 lg:px-12">
+      {/* --- Header Section --- */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-blue-700 tracking-tight">Patient Directory</h1>
+          <p className="text-slate-500 text-sm font-medium">Streamlined record management and scheduling</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* --- Smaller, focused Search Input --- */}
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <SearchIcon />
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative group flex-grow md:flex-grow-0">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center">
+              <Icons.Search />
             </div>
             <input
               type="text" 
-              placeholder="Search patients..."
+              placeholder="Search by name or ID..."
               value={search} 
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all shadow-sm"
+              className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm w-full md:w-80 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-sm"
             />
           </div>
 
           {isReceptionist && (
             <button
               onClick={() => navigate("/patients/new")}
-              className="flex items-center px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
+              className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:translate-y-0.5"
             >
-              <PlusIcon /> New Patient
+              <Icons.Plus /> New Patient
             </button>
           )}
         </div>
       </div>
 
-      {/* --- Table Container --- */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* --- Main Table Container --- */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="h-64 flex items-center justify-center text-slate-400 animate-pulse font-medium">Loading records...</div>
+          <div className="h-96 flex flex-col items-center justify-center space-y-4">
+             <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+             <p className="text-slate-400 font-semibold animate-pulse">Syncing Database...</p>
+          </div>
+        ) : searchedPatients.length === 0 ? (
+          <div className="h-96 flex flex-col items-center justify-center text-center p-6">
+            <div className="bg-slate-50 p-6 rounded-full mb-4">
+                <Icons.Search />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">No patients found</h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto">We couldn't find any records matching "{search}". Try a different name or ID.</p>
+          </div>
         ) : (
           <DataTable
             data={searchedPatients}
             columns={[
               { header: "ID", accessor: "Patient_ID" },
-              { header: "Name", accessor: "Name" },
+              { header: "Patient Name", accessor: "Name" },
               { header: "Gender", accessor: "Gender" },
-              { header: "Phone", accessor: "Phone" },
+              { header: "Contact Info", accessor: "Phone" },
             ]}
             actions={filteredActions}
           />
         )}
       </div>
 
-      {/* --- Modals --- */}
+      {/* --- Modals with improved Z-indexing --- */}
       {quickBookModal && selectedPatient && (
         <QuickBookModal patient={selectedPatient} onClose={() => setQuickBookModal(false)} />
       )}
 
       {invoiceModal && selectedPatient && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <BillForm selectedPatient={selectedPatient} onClose={() => setInvoiceModal(false)} />
           </div>
         </div>
